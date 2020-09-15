@@ -1,5 +1,5 @@
 use super::*;
-use std::alloc::{AllocErr, AllocInit, AllocRef, Layout, MemoryBlock};
+use std::alloc::{AllocErr, AllocRef, Layout};
 use std::ptr::{self, write_bytes, NonNull};
 
 /// The global memory allocator for untrusted memory
@@ -8,11 +8,7 @@ pub static mut UNTRUSTED_ALLOC: UntrustedAlloc = UntrustedAlloc;
 pub struct UntrustedAlloc;
 
 unsafe impl AllocRef for UntrustedAlloc {
-    fn alloc(
-        &mut self,
-        layout: Layout,
-        init: AllocInit,
-    ) -> std::result::Result<MemoryBlock, AllocErr> {
+    fn alloc(&mut self, layout: Layout) -> std::result::Result<NonNull<[u8]>, AllocErr> {
         if layout.size() == 0 {
             return Err(AllocErr);
         }
@@ -33,10 +29,10 @@ unsafe impl AllocRef for UntrustedAlloc {
             return Err(AllocErr);
         }
 
-        if init == AllocInit::Zeroed {
-            unsafe {
-                write_bytes(mem_ptr, 0, layout.size());
-            }
+        // Todo: If we have clear infomation about the buffer is used for output,
+        // then we do not need to do the clean task.
+        unsafe {
+            write_bytes(mem_ptr, 0, layout.size());
         }
 
         // Sanity checks
@@ -47,10 +43,10 @@ unsafe impl AllocRef for UntrustedAlloc {
             mem_ptr as *const u8,
             layout.size()
         ));
-        Ok(MemoryBlock {
-            ptr: NonNull::new(mem_ptr).unwrap(),
-            size: layout.size(),
+        Ok(NonNull::new(unsafe {
+            core::slice::from_raw_parts_mut(mem_ptr, layout.size() as usize)
         })
+        .unwrap())
     }
 
     unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
