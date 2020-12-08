@@ -76,7 +76,7 @@ inventory::submit! {
         if NEW_THREAD_TABLE.lock().unwrap().is_empty(){
             false
         } else {
-            error!("NEW_THREAD_TABLE is not empty.");
+            panic!("NEW_THREAD_TABLE is not empty.");
             true
         })
 }

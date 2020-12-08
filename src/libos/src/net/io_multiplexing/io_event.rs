@@ -12,7 +12,7 @@ inventory::submit! {
         if THREAD_NOTIFIERS.lock().unwrap().is_empty(){
             false
         } else {
-            error!("THREAD_NOTIFIERS is not empty.");
+            panic!("THREAD_NOTIFIERS is not empty.");
             true
         })
 }

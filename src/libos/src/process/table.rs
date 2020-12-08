@@ -62,7 +62,7 @@ inventory::submit! {
         if PROCESS_TABLE.lock().unwrap().is_empty(){
             false
         } else {
-            error!("PROCESS_TABLE is not empty.");
+            panic!("PROCESS_TABLE is not empty.");
             true
         })
 }
@@ -72,7 +72,7 @@ inventory::submit! {
         if THREAD_TABLE.lock().unwrap().is_empty(){
             false
         } else {
-            error!("THREAD_TABLE is not empty.");
+            panic!("THREAD_TABLE is not empty.");
             true
         })
 }
