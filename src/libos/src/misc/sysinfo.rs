@@ -31,5 +31,6 @@ pub fn do_sysinfo() -> Result<sysinfo_t> {
         mem_unit: 1,
         ..Default::default()
     };
+    info!("{:?}", table::get_all_processes());
     Ok(info)
 }
