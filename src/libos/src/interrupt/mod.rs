@@ -17,6 +17,8 @@ pub fn init() {
 
 extern "C" fn handle_interrupt(info: *mut sgx_interrupt_info_t) -> i32 {
     let mut fpregs = FpRegs::save();
+
+    info!("thread interrupted");
     unsafe {
         exception_interrupt_syscall_c_abi(
             SyscallNum::HandleInterrupt as u32,
@@ -34,6 +36,7 @@ pub fn do_handle_interrupt(
 ) -> Result<isize> {
     let info = unsafe { &*info };
     let context = unsafe { &mut *cpu_context };
+    info!("thread interrupt handled");
     // The cpu context is overriden so that it is as if the syscall is called from where the
     // interrupt happened
     *context = CpuContext::from_sgx(&info.cpu_context);
@@ -61,6 +64,7 @@ pub fn broadcast_interrupts() -> Result<usize> {
                     Some(host_tid) => host_tid,
                 }
             };
+            info!("signal thread {:?}", host_tid);
             let signum = 64; // real-time signal 64 is used to notify interrupts
             let is_signaled = unsafe {
                 let mut retval = 0;
@@ -76,6 +80,9 @@ pub fn broadcast_interrupts() -> Result<usize> {
         })
         .filter(|&is_signaled| is_signaled)
         .count();
+    if num_signaled_threads > 0 {
+        info!("num_signaled_threads:{:?}", num_signaled_threads);
+    }
     Ok(num_signaled_threads)
 }
 
