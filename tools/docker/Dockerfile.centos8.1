@@ -45,32 +45,6 @@ RUN yum install epel-release -y && \
     http://downloads.sourceforge.net/ltp/lcov-1.14-1.noarch.rpm &&\
     alternatives --set python /usr/bin/python2
 
-WORKDIR /tmp
-#RUN yum install gzip
-RUN wget https://download.01.org/intel-sgx/sgx-linux/2.11/distro/centos8.1-server/sgx_rpm_local_repo.tgz && \
-    tar -xvf sgx_rpm_local_repo.tgz && \
-    rm sgx_rpm_local_repo.tgz && \
-    wget https://download.01.org/intel-sgx/sgx-dcap/1.8/linux/distro/centos8.1-server/sgx_rpm_local_repo.tgz && \
-    tar -xvf sgx_rpm_local_repo.tgz && \
-    rm sgx_rpm_local_repo.tgz
-
-WORKDIR /tmp/sgx_rpm_local_repo
-RUN rpm -ivh libsgx-ae-pce*.rpm \
-    libsgx-ae-qe3*.rpm \
-    libsgx-ae-qve*.rpm \
-    libsgx-enclave-common*.rpm \
-    libsgx-quote-ex*.rpm \
-    libsgx-urts*.rpm \
-    libsgx-dcap-ql*.rpm \
-    libsgx-qe3-logic*.rpm \
-    libsgx-pce-logic*.rpm \
-    libsgx-dcap-quote-verify*.rpm \
-    libsgx-dcap-ql*.rpm \
-    libsgx-dcap-ql-dev*.rpm \
-    libsgx-dcap-default-qpl*.rpm \
-    libsgx-dcap-default-qpl-dev*.rpm \
-    libsgx-dcap-quote-verify-dev*.rpm
-
 # Install cpuid tool for tests
 WORKDIR /tmp
 RUN wget http://www.etallen.com/cpuid/cpuid-20200211.x86_64.tar.gz && \
@@ -122,12 +96,43 @@ ENV PATH="/opt/occlum/toolchains/jvm/bin:$PATH"
 
 # Install SGX SDK
 WORKDIR /tmp
+RUN echo "ca_directory=/etc/ssl/certs" >> /etc/wgetrc
 RUN git clone -b update_simulation https://github.com/guzongmin/linux-sgx  && \
     cd linux-sgx && \
     make preparation && \
     ./compile_and_install.sh no_mitigation USE_OPT_LIBS=2 && \
     echo 'source /opt/intel/sgxsdk/environment' >> /root/.bashrc && \
     rm -rf /tmp/linux-sgx
+
+# Install SGX PSW
+WORKDIR /tmp
+RUN wget https://download.01.org/intel-sgx/sgx-linux/2.11/distro/centos8.1-server/sgx_rpm_local_repo.tgz && \
+    tar -xvf sgx_rpm_local_repo.tgz && \
+    rm sgx_rpm_local_repo.tgz && \
+    wget https://download.01.org/intel-sgx/sgx-dcap/1.8/linux/distro/centos8.1-server/sgx_rpm_local_repo.tgz && \
+    tar -xvf sgx_rpm_local_repo.tgz && \
+    rm sgx_rpm_local_repo.tgz && \
+    cd /tmp/sgx_rpm_local_repo &&\
+    rpm -ivh libsgx-ae-pce*.rpm \
+    libsgx-ae-qe3*.rpm \
+    libsgx-ae-qve*.rpm \
+    libsgx-enclave-common*.rpm \
+    libsgx-quote-ex*.rpm \
+    libsgx-urts*.rpm \
+    libsgx-dcap-ql*.rpm \
+    libsgx-qe3-logic*.rpm \
+    libsgx-pce-logic*.rpm \
+    libsgx-dcap-quote-verify*.rpm \
+    libsgx-dcap-ql*.rpm \
+    libsgx-dcap-ql-dev*.rpm \
+    libsgx-dcap-default-qpl*.rpm \
+    libsgx-dcap-default-qpl-dev*.rpm \
+    libsgx-dcap-quote-verify-dev*.rpm \
+    libsgx-uae-service*.rpm \
+    libsgx-epid*.rpm \
+    libsgx-launch*.rpm \
+    sgx-aesm-service*.rpm && \
+    rm -rf /tmp/sgx_rpm_local_repo
 
 # Install the latest version of Occlum
 WORKDIR /root
@@ -146,6 +151,6 @@ RUN git clone -b enable_more_simulation https://github.com/guzongmin/occlum  && 
 # as a "real" service since the pid 1 is not systemd in Docker. So we start
 # up AESM service when an user login with an interative shell.
 COPY docker/start_aesm.sh /opt/occlum/
-RUN echo '/opt/occlum/start_aesm.sh' >> /root/.bashrc
+RUN mkdir -p /var/run/aesmd && echo '/opt/occlum/start_aesm.sh' >> /root/.bashrc
 
 WORKDIR /root

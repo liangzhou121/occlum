@@ -52,39 +52,15 @@ RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install -y --no-i
         vim \
         wget \
         zip \
-        && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN apt-get update && DEBIAN_FRONTEND="noninteractive" apt-get install -y --no-install-recommends \
         gnupg \
         aptitude \
         && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN echo 'deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu bionic main' | tee /etc/apt/sources.list.d/intel-sgx.list &&\
+RUN echo "ca_directory=/etc/ssl/certs" >> /etc/wgetrc && \
+    echo 'deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu bionic main' | tee /etc/apt/sources.list.d/intel-sgx.list &&\
     wget -qO - https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key --no-check-certificate | apt-key add -
-    
-RUN apt-get update
-RUN aptitude install -y\
-       libsgx-launch-dev=2.11.100.2-bionic1 \
-       libsgx-epid-dev=2.11.100.2-bionic1 \
-       libsgx-quote-ex-dev=2.11.100.2-bionic1 \
-       libsgx-dcap-ql-dev=1.8.100.2-bionic1 \
-       libsgx-urts=2.11.100.2-bionic1 \
-       libsgx-enclave-common=2.11.100.2-bionic1 \
-       libsgx-uae-service=2.11.100.2-bionic1 \
-       libsgx-ae-epid=2.11.100.2-bionic1 \
-       libsgx-ae-le=2.11.100.2-bionic1 \
-       libsgx-ae-pce=2.11.100.2-bionic1 \
-       libsgx-aesm-launch-plugin=2.11.100.2-bionic1 \
-       sgx-aesm-service=2.11.100.2-bionic1 \
-       libsgx-aesm-launch-plugin=2.11.100.2-bionic1 \
-       libsgx-aesm-pce-plugin=2.11.100.2-bionic1 \
-       libsgx-aesm-ecdsa-plugin=2.11.100.2-bionic1 \
-       libsgx-aesm-epid-plugin=2.11.100.2-bionic1 \
-       libsgx-aesm-quote-ex-plugin=2.11.100.2-bionic1	
 
 # Install cpuid tool for tests
 WORKDIR /tmp
@@ -145,6 +121,33 @@ RUN git clone -b update_simulation https://github.com/guzongmin/linux-sgx && \
     echo 'source /opt/intel/sgxsdk/environment' >> /root/.bashrc && \
     rm -rf /tmp/linux-sgx
 
+# Install SGX PSW
+RUN apt-get update &&aptitude install -y \
+        libsgx-launch-dev=2.11.100.2-bionic1 \
+        libsgx-epid-dev=2.11.100.2-bionic1 \
+        libsgx-quote-ex-dev=2.11.100.2-bionic1 \
+        libsgx-urts=2.11.100.2-bionic1 \
+        libsgx-enclave-common=2.11.100.2-bionic1 \
+        libsgx-uae-service=2.11.100.2-bionic1 \
+        libsgx-ae-epid=2.11.100.2-bionic1 \
+        libsgx-ae-le=2.11.100.2-bionic1 \
+        libsgx-ae-pce=2.11.100.2-bionic1 \
+        libsgx-aesm-launch-plugin=2.11.100.2-bionic1 \
+        sgx-aesm-service=2.11.100.2-bionic1 \
+        libsgx-aesm-launch-plugin=2.11.100.2-bionic1 \
+        libsgx-aesm-pce-plugin=2.11.100.2-bionic1 \
+        libsgx-aesm-ecdsa-plugin=2.11.100.2-bionic1 \
+        libsgx-aesm-epid-plugin=2.11.100.2-bionic1 \
+        libsgx-aesm-quote-ex-plugin=2.11.100.2-bionic1 \
+        libsgx-dcap-quote-verify=1.8.100.2-bionic1 \
+        libsgx-dcap-quote-verify-dev=1.8.100.2-bionic1 \
+        libsgx-dcap-ql=1.8.100.2-bionic1 \
+        libsgx-dcap-ql-dev=1.8.100.2-bionic1 \
+        && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    ln -s /usr/lib/x86_64-linux-gnu/libsgx_enclave_common.so.1 /usr/lib/x86_64-linux-gnu/libsgx_enclave_common.so
+
 # Install the latest version of Occlum
 WORKDIR /root
 RUN git clone -b enable_more_simulation https://github.com/guzongmin/occlum && \
@@ -160,7 +163,7 @@ RUN git clone -b enable_more_simulation https://github.com/guzongmin/occlum && \
 # To do so, we add the script to ~/.bashrc. We cannot use systemd to run AESM
 # as a "real" service since the pid 1 is not systemd in Docker. So we start
 # up AESM service when an user login with an interative shell.
-COPY docker/start_aesm.sh /opt/occlum/ && mkdir -p /var/run/aesmd
-RUN echo '/opt/occlum/start_aesm.sh' >> /root/.bashrc
+COPY docker/start_aesm.sh /opt/occlum/ 
+RUN mkdir -p /var/run/aesmd && echo '/opt/occlum/start_aesm.sh' >> /root/.bashrc
 
 WORKDIR /root
