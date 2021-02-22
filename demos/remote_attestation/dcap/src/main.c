@@ -5,8 +5,10 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 
-#include "quote_generation.h"
+// #include "quote_generation.h"
 #include "quote_verification.h"
+
+#include "dcap.h"
 
 int main() {
     int sgx_fd;
@@ -15,7 +17,8 @@ int main() {
         return -1;
     }
 
-    uint32_t quote_size = get_quote_size(sgx_fd);
+    // uint32_t quote_size = get_quote_size(sgx_fd);
+    uint32_t quote_size = get_dcap_quote_size();
 
     uint8_t *quote_buffer = (uint8_t *)malloc(quote_size);
     if (NULL == quote_buffer) {
@@ -29,19 +32,24 @@ int main() {
     char *data = "ioctl DCAP report data example";
     memcpy(report_data.d, data, strlen(data));
 
-    sgxioc_gen_dcap_quote_arg_t gen_quote_arg = {
-        .report_data = &report_data,
-        .quote_len = &quote_size,
-        .quote_buf = quote_buffer
-    };
+    // sgxioc_gen_dcap_quote_arg_t gen_quote_arg = {
+    //     .report_data = &report_data,
+    //     .quote_len = &quote_size,
+    //     .quote_buf = quote_buffer
+    // };
 
-    if (generate_quote(sgx_fd, &gen_quote_arg) != 0) {
-        printf("failed to generate quote\n");
-        close(sgx_fd);
-        return -1;
-    }
+    // if (generate_quote(sgx_fd, &gen_quote_arg) != 0) {
+    //     printf("failed to generate quote\n");
+    //     close(sgx_fd);
+    //     return -1;
+    // }
 
-    printf("Succeed to generate the quote!\n");
+    // printf("Succeed to generate the quote!\n");
+
+    memset(quote_buffer, 0, quote_size);
+    generate_dcap_quote(&report_data, quote_buffer, (int)quote_size);
+
+    printf("Succeed to generate the quote\n");
 
     uint32_t supplemental_size = get_supplemental_data_size(sgx_fd);
 
