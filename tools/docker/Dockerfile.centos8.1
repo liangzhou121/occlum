@@ -94,19 +94,10 @@ WORKDIR /tmp
 RUN cd java && ./install_dragonwell.sh && rm -rf /tmp/java
 ENV PATH="/opt/occlum/toolchains/jvm/bin:$PATH"
 
-# Install SGX SDK
-WORKDIR /tmp
-RUN echo "ca_directory=/etc/ssl/certs" >> /etc/wgetrc
-RUN git clone -b sgx_2.11_for_occlum https://github.com/occlum/linux-sgx && \
-    cd linux-sgx && \
-    make preparation && \
-    ./compile_and_install.sh no_mitigation USE_OPT_LIBS=2 && \
-    echo 'source /opt/intel/sgxsdk/environment' >> /root/.bashrc && \
-    rm -rf /tmp/linux-sgx
-
 # Install SGX PSW
 WORKDIR /tmp
-RUN wget https://download.01.org/intel-sgx/sgx-linux/2.11/distro/centos8.1-server/sgx_rpm_local_repo.tgz && \
+RUN echo "ca_directory=/etc/ssl/certs" >> /etc/wgetrc && \
+    wget https://download.01.org/intel-sgx/sgx-linux/2.11/distro/centos8.1-server/sgx_rpm_local_repo.tgz && \
     tar -xvf sgx_rpm_local_repo.tgz && \
     rm sgx_rpm_local_repo.tgz && \
     wget https://download.01.org/intel-sgx/sgx-dcap/1.8/linux/distro/centos8.1-server/sgx_rpm_local_repo.tgz && \
@@ -134,10 +125,19 @@ RUN wget https://download.01.org/intel-sgx/sgx-linux/2.11/distro/centos8.1-serve
     sgx-aesm-service*.rpm && \
     rm -rf /tmp/sgx_rpm_local_repo
 
+# Install SGX SDK
+WORKDIR /tmp
+RUN git clone -b update_docker https://github.com/guzongmin/linux-sgx.git && \
+    cd linux-sgx && \
+    make preparation && \
+    ./compile_and_install.sh no_mitigation USE_OPT_LIBS=2 && \
+    echo 'source /opt/intel/sgxsdk/environment' >> /root/.bashrc && \
+    rm -rf /tmp/linux-sgx
+
 # Install the latest version of Occlum
 ARG OCCLUM_BRANCH
 WORKDIR /root
-RUN git clone -b $OCCLUM_BRANCH https://github.com/occlum/occlum && \
+RUN git clone -b simulation_mode_enhancement https://github.com/guzongmin/occlum.git && \
     cd occlum && \
     source /root/.bashrc && \
     make submodule && \
