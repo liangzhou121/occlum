@@ -113,32 +113,32 @@ ENV PATH="/opt/occlum/toolchains/jvm/bin:$PATH"
 
 # Install SGX PSW
 RUN apt-get update && aptitude install -y \
-        libsgx-launch-dev=2.11.100.2-bionic1 \
-        libsgx-epid-dev=2.11.100.2-bionic1 \
-        libsgx-quote-ex-dev=2.11.100.2-bionic1 \
-        libsgx-urts=2.11.100.2-bionic1 \
-        libsgx-enclave-common=2.11.100.2-bionic1 \
-        libsgx-uae-service=2.11.100.2-bionic1 \
-        libsgx-ae-epid=2.11.100.2-bionic1 \
-        libsgx-ae-le=2.11.100.2-bionic1 \
-        libsgx-ae-pce=2.11.100.2-bionic1 \
-        libsgx-aesm-launch-plugin=2.11.100.2-bionic1 \
-        sgx-aesm-service=2.11.100.2-bionic1 \
-        libsgx-aesm-launch-plugin=2.11.100.2-bionic1 \
-        libsgx-aesm-pce-plugin=2.11.100.2-bionic1 \
-        libsgx-aesm-ecdsa-plugin=2.11.100.2-bionic1 \
-        libsgx-aesm-epid-plugin=2.11.100.2-bionic1 \
-        libsgx-aesm-quote-ex-plugin=2.11.100.2-bionic1 \
-        libsgx-dcap-quote-verify=1.8.100.2-bionic1 \
-        libsgx-dcap-quote-verify-dev=1.8.100.2-bionic1 \
-        libsgx-dcap-ql=1.8.100.2-bionic1 \
-        libsgx-dcap-ql-dev=1.8.100.2-bionic1 \
-        libsgx-epid=2.11.100.2-bionic1 \
-        libsgx-quote-ex=2.11.100.2-bionic1 \
-        libsgx-pce-logic=1.8.100.2-bionic1 \
-        libsgx-qe3-logic=1.8.100.2-bionic1 \
-        libsgx-launch=2.11.100.2-bionic1 \
-        libsgx-dcap-default-qpl=1.8.100.2-bionic1 \
+        libsgx-launch-dev=2.13.100.4-bionic1 \
+        libsgx-epid-dev=2.13.100.4-bionic1 \
+        libsgx-quote-ex-dev=2.13.100.4-bionic1 \
+        libsgx-urts=2.13.100.4-bionic1 \
+        libsgx-enclave-common=2.13.100.4-bionic1 \
+        libsgx-uae-service=2.13.100.4-bionic1 \
+        libsgx-ae-epid=2.13.100.4-bionic1 \
+        libsgx-ae-le=2.13.100.4-bionic1 \
+        libsgx-ae-pce=2.13.100.4-bionic1 \
+        libsgx-aesm-launch-plugin=2.13.100.4-bionic1 \
+        sgx-aesm-service=2.13.100.4-bionic1 \
+        libsgx-aesm-launch-plugin=2.13.100.4-bionic1 \
+        libsgx-aesm-pce-plugin=2.13.100.4-bionic1 \
+        libsgx-aesm-ecdsa-plugin=2.13.100.4-bionic1 \
+        libsgx-aesm-epid-plugin=2.13.100.4-bionic1 \
+        libsgx-aesm-quote-ex-plugin=2.13.100.4-bionic1 \
+        libsgx-dcap-quote-verify=1.10.100.4-bionic1 \
+        libsgx-dcap-quote-verify-dev=1.10.100.4-bionic1 \
+        libsgx-dcap-ql=1.10.100.4-bionic1 \
+        libsgx-dcap-ql-dev=1.10.100.4-bionic1 \
+        libsgx-epid=2.13.100.4-bionic1 \
+        libsgx-quote-ex=2.13.100.4-bionic1 \
+        libsgx-pce-logic=1.10.100.4-bionic1 \
+        libsgx-qe3-logic=1.10.100.4-bionic1 \
+        libsgx-launch=2.13.100.4-bionic1 \
+        libsgx-dcap-default-qpl=1.10.100.4-bionic1 \
         && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
@@ -146,7 +146,7 @@ RUN apt-get update && aptitude install -y \
 
 # Install SGX SDK
 WORKDIR /tmp
-RUN git clone -b update_docker https://github.com/guzongmin/linux-sgx.git && \
+RUN git clone -b sgx_2.13_for_occlum https://github.com/guzongmin/linux-sgx.git && \
     mkdir /etc/init && \
     cd linux-sgx && \
     make preparation && \
@@ -157,7 +157,7 @@ RUN git clone -b update_docker https://github.com/guzongmin/linux-sgx.git && \
 # Install the latest version of Occlum
 ARG OCCLUM_BRANCH
 WORKDIR /root
-RUN git clone -b simulation_mode_enhancement https://github.com/guzongmin/occlum.git && \
+RUN git clone -b update_2.13 https://github.com/guzongmin/occlum.git && \
     cd occlum && \
     make submodule && \
     OCCLUM_RELEASE_BUILD=1 make && \
