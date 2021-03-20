@@ -443,12 +443,10 @@ jobs:
       run: docker exec flink_test bash -c "cd /root/occlum/demos/flink && SGX_MODE=SIM ./run_flink_jobmanager_on_host.sh"
 
     - name: Run flink taskmanager
-      run: |
-        sleep ${{ env.nap_time }};
-        docker exec flink_test bash -c "cd /root/occlum/demos/flink && SGX_MODE=SIM ./run_flink_on_occlum_glibc.sh tm &"
+      run: docker exec flink_test bash -c "cd /root/occlum/demos/flink && SGX_MODE=SIM ./run_flink_on_occlum_glibc.sh tm"
 
     - name: Run flink task
       run: |
-        sleep 10m;
+        sleep ${{ env.nap_time }};
         docker exec flink_test bash -c "cd /root/occlum/demos/flink && SGX_MODE=SIM ./run_flink_on_occlum_glibc.sh task"
 

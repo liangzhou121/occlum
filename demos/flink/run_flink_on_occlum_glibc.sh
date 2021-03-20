@@ -58,7 +58,8 @@ run_taskmanager() {
 	-D taskmanager.memory.network.min=64mb \
 	-D taskmanager.memory.managed.size=128mb \
 	-D taskmanager.cpu.cores=1.0 \
-	-D taskmanager.memory.task.heap.size=256mb
+	-D taskmanager.memory.task.heap.size=256mb \
+    &
 }
 
 run_task() {
