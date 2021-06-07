@@ -50,6 +50,8 @@ where
     }
 
     pub fn sleep_until_woken_with_result(self) -> R {
+        let current = unsafe { sgx_thread_get_self() };
+        assert!(self.thread == current);
         while !self.inner.lock().unwrap().is_woken {
             unsafe {
                 wait_event(self.thread);
