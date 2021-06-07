@@ -429,9 +429,10 @@ impl Waiter {
 
     pub fn wait_timeout(&self, timeout: &Option<FutexTimeout>) -> Result<()> {
         let current = unsafe { sgx_thread_get_self() };
-        if current != self.thread {
-            return Ok(());
-        }
+        assert!(self.thread == current);
+        // if current != self.thread {
+        //     return Ok(());
+        // }
         while self.is_woken.load(Ordering::SeqCst) == false {
             if let Err(e) = wait_event_timeout(self.thread, timeout) {
                 self.is_woken.store(true, Ordering::SeqCst);
