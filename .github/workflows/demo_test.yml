@@ -702,11 +702,11 @@ jobs:
     - name: Create container
       run: docker run -itd --name=tf_serving_test -v $GITHUB_WORKSPACE:/root/occlum occlumbackup/occlum:latest-ubuntu18.04-tf_serving
 
-    - name: Build dependencies
-      run: docker exec tf_serving_test bash -c "cd /root/occlum; make submodule"
+    # - name: Build dependencies
+    #   run: docker exec tf_serving_test bash -c "cd /root/occlum; make submodule"
 
-    - name: Make install
-      run: docker exec tf_serving_test bash -c "source /opt/intel/sgxsdk/environment; cd /root/occlum; OCCLUM_RELEASE_BUILD=1 make install"
+    # - name: Make install
+    #   run: docker exec tf_serving_test bash -c "source /opt/intel/sgxsdk/environment; cd /root/occlum; OCCLUM_RELEASE_BUILD=1 make install"
     
     - name: Move tensorflow_model_server
       run: docker exec tf_serving_test bash -c "mv /root/tensorflow_model_server /root/occlum/demos/tensorflow/tensorflow_serving"
