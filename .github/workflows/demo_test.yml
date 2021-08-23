@@ -724,6 +724,7 @@ jobs:
         sleep 480;
         docker exec tf_serving_test bash -c "cd /root/occlum/demos/tensorflow/tensorflow_serving/client && ./benchmark.sh python3 localhost:8500 ../ssl_configure/server.crt" || true;
         cat "$GITHUB_WORKSPACE/log";
+        cpuid | grep AVX;
         if grep -q Successfully "$GITHUB_WORKSPACE/log"; then
           echo "Success"
         else
