@@ -40,6 +40,8 @@ cp $occlum_glibc/libpthread.so.0 image/$occlum_glibc
 cp $occlum_glibc/libnss_files.so.2 image/$occlum_glibc
 cp $occlum_glibc/libnss_compat.so.2 image/$occlum_glibc
 
+cpuid | grep AVX
+
 #occlum build
 occlum build
 # 3. Run benchmark
