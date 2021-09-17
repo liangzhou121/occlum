@@ -13,7 +13,7 @@ targets:
     copy: 
       - dirs:
           - /usr/share/nginx
-  - target: /usr/sbin
+  - target: /bin
     copy:
       - files:
         - /usr/sbin/nginx
@@ -28,10 +28,10 @@ targets:
   - target: /opt/occlum/glibc/lib
     copy: 
       - files:
-          - /lib/x86_64-linux-gnu/libnss_compat.so.2
           - /lib/x86_64-linux-gnu/libnss_nis.so.2
-          - /lib/x86_64-linux-gnu/libnsl.so.1
-          - /lib/x86_64-linux-gnu/libnss_files.so.2
+          - /lib/x86_64-linux-gnu/libnss_compat.so.2
+          # - /lib/x86_64-linux-gnu/libnsl.so.1
+          # - /lib/x86_64-linux-gnu/libnss_files.so.2
   - target: /var/lib
     mkdirs:
           - nginx
