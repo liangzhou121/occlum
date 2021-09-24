@@ -16,7 +16,7 @@ targets:
   - target: /bin
     copy:
       - files:
-        - /usr/sbin/nginx
+        - /root/nginx-1.21.3/objs/nginx
   - target: /tmp
     copy:
       - files:
@@ -30,11 +30,49 @@ targets:
       - files:
           - /lib/x86_64-linux-gnu/libnss_nis.so.2
           - /lib/x86_64-linux-gnu/libnss_compat.so.2
-          # - /lib/x86_64-linux-gnu/libnsl.so.1
-          # - /lib/x86_64-linux-gnu/libnss_files.so.2
+          - /usr/lib/x86_64-linux-gnu/libGeoIP.so.1
+          - /usr/lib/x86_64-linux-gnu/libgd.so.3
+          - /usr/lib/x86_64-linux-gnu/libpng16.so.16
+          - /usr/lib/x86_64-linux-gnu/libfontconfig.so.1
+          - /usr/lib/x86_64-linux-gnu/libfreetype.so.6
+          - /usr/lib/x86_64-linux-gnu/libjpeg.so.8
+          - /usr/lib/x86_64-linux-gnu/libXpm.so.4
+          - /usr/lib/x86_64-linux-gnu/libtiff.so.5
+          - /usr/lib/x86_64-linux-gnu/libwebp.so.6
+          - /lib/x86_64-linux-gnu/libexpat.so.1
+          - /usr/lib/x86_64-linux-gnu/libX11.so.6
+          - /lib/x86_64-linux-gnu/liblzma.so.5
+          - /usr/lib/x86_64-linux-gnu/libjbig.so.0
+          - /usr/lib/x86_64-linux-gnu/libxcb.so.1
+          - /usr/lib/x86_64-linux-gnu/libXau.so.6
+          - /usr/lib/x86_64-linux-gnu/libXdmcp.so.6
+          - /lib/x86_64-linux-gnu/libbsd.so.0
+          - /lib/x86_64-linux-gnu/librt.so.1
+          - /lib/x86_64-linux-gnu/libpcre.so.3
+          - /usr/lib/x86_64-linux-gnu/libxml2.so.2
+          - /usr/lib/x86_64-linux-gnu/libxslt.so.1
+          - /usr/lib/x86_64-linux-gnu/libexslt.so.0
+          - /usr/lib/x86_64-linux-gnu/libicuuc.so.60
+          - /lib/x86_64-linux-gnu/libgcrypt.so.20
+          - /usr/lib/x86_64-linux-gnu/libicudata.so.60
+          - /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+          - /lib/x86_64-linux-gnu/libgcc_s.so.1
+          - /lib/x86_64-linux-gnu/libgpg-error.so.0
   - target: /var/lib
     mkdirs:
           - nginx
   - target: /
     mkdirs:
           - run
+  - target: /usr/share/nginx/modules
+    copy:
+      - files:
+          - /usr/share/nginx/modules/ngx_http_geoip_module.so
+          - /usr/share/nginx/modules/ngx_http_xslt_filter_module.so
+          - /usr/share/nginx/modules/ngx_stream_module.so
+          - /usr/share/nginx/modules/ngx_http_image_filter_module.so
+          - /usr/share/nginx/modules/ngx_mail_module.so
+  - target: /usr/local
+    mkdirs:
+          - nginx
+          - nginx/logs

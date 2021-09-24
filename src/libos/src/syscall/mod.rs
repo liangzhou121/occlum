@@ -44,15 +44,15 @@ use crate::net::{
 use crate::process::{
     do_arch_prctl, do_clone, do_execve, do_exit, do_exit_group, do_futex, do_get_robust_list,
     do_getegid, do_geteuid, do_getgid, do_getgroups, do_getpgid, do_getpgrp, do_getpid, do_getppid,
-    do_gettid, do_getuid, do_prctl, do_set_robust_list, do_set_tid_address, do_setpgid,
-    do_spawn_for_glibc, do_spawn_for_musl, do_vfork, do_wait4, pid_t, posix_spawnattr_t, FdOp,
-    RobustListHead, SpawnFileActions, ThreadStatus,
+    do_gettid, do_getuid, do_prctl, do_set_robust_list, do_set_tid_address, do_setgid, do_setpgid,
+    do_setuid, do_spawn_for_glibc, do_spawn_for_musl, do_vfork, do_wait4, pid_t, posix_spawnattr_t,
+    FdOp, RobustListHead, SpawnFileActions, ThreadStatus,
 };
 use crate::sched::{do_getcpu, do_sched_getaffinity, do_sched_setaffinity, do_sched_yield};
 use crate::signal::{
     do_kill, do_rt_sigaction, do_rt_sigpending, do_rt_sigprocmask, do_rt_sigreturn,
-    do_rt_sigtimedwait, do_sigaltstack, do_tgkill, do_tkill, sigaction_t, siginfo_t, sigset_t,
-    stack_t,
+    do_rt_sigsuspend, do_rt_sigtimedwait, do_sigaltstack, do_tgkill, do_tkill, sigaction_t,
+    siginfo_t, sigset_t, stack_t,
 };
 use crate::vm::{MMapFlags, MRemapFlags, MSyncFlags, VMPerms};
 use crate::{fs, process, std, vm};
@@ -193,8 +193,8 @@ macro_rules! process_syscall_table_with_callback {
             (Getuid = 102) => do_getuid(),
             (SysLog = 103) => handle_unsupported(),
             (Getgid = 104) => do_getgid(),
-            (Setuid = 105) => handle_unsupported(),
-            (Setgid = 106) => handle_unsupported(),
+            (Setuid = 105) => do_setuid(uid: i32),
+            (Setgid = 106) => do_setgid(pid: i32),
             (Geteuid = 107) => do_geteuid(),
             (Getegid = 108) => do_getegid(),
             (Setpgid = 109) => do_setpgid(pid: i32, pgid: i32),
@@ -218,7 +218,7 @@ macro_rules! process_syscall_table_with_callback {
             (RtSigpending = 127) => do_rt_sigpending(buf_ptr: *mut sigset_t, buf_size: usize),
             (RtSigtimedwait = 128) => do_rt_sigtimedwait(mask_ptr: *const sigset_t, info_ptr: *mut siginfo_t, timeout_ptr: *const timespec_t, mask_size: usize),
             (RtSigqueueinfo = 129) => handle_unsupported(),
-            (RtSigsuspend = 130) => handle_unsupported(),
+            (RtSigsuspend = 130) => do_rt_sigsuspend(mask_ptr: *const sigset_t),
             (Sigaltstack = 131) => do_sigaltstack(ss: *const stack_t, old_ss: *mut stack_t, context: *const CpuContext),
             (Utime = 132) => handle_unsupported(),
             (Mknod = 133) => handle_unsupported(),

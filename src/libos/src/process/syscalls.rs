@@ -434,8 +434,15 @@ pub fn do_setpgid(pid: i32, pgid: i32) -> Result<isize> {
 }
 
 // TODO: implement uid, gid, euid, egid
+pub fn do_setgid(gid: i32) -> Result<isize> {
+    Ok(0)
+}
 
 pub fn do_getuid() -> Result<isize> {
+    Ok(0)
+}
+
+pub fn do_setuid(uid: i32) -> Result<isize> {
     Ok(0)
 }
 

@@ -194,3 +194,24 @@ pub fn do_rt_sigtimedwait(
     *info = super::do_sigtimedwait::do_sigtimedwait(mask, timeout.as_ref())?;
     Ok(0)
 }
+
+pub fn do_rt_sigsuspend(mask_ptr: *const sigset_t) -> Result<isize> {
+    let mask: SigSet = {
+        if mask_ptr.is_null() {
+            return_errno!(EINVAL, "ptr must not be null");
+        }
+        SigSet::from_c(unsafe { *mask_ptr })
+    };
+
+    let current = current!();
+    let orignal_mask = current.sig_mask().read().unwrap().clone();
+
+    // update the mask
+    *current.sig_mask().write().unwrap() = mask;
+
+    let five_seconds = Duration::new(100000000, 0);
+    super::do_sigtimedwait::do_sigtimedwait(SigSet::new_empty(), Some(five_seconds).as_ref());
+
+    *current.sig_mask().write().unwrap() = orignal_mask;
+    Ok(-1)
+}
