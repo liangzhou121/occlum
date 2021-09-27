@@ -42,8 +42,12 @@ jobs:
     - name: Integration test with Glibc
       run:  docker exec code_coverage bash -c "cd /root/occlum; SGX_MODE=SIM make test-glibc"
 
-    - name: Upload coverage report
-      run: docker exec code_coverage bash -c "cd /root/occlum/build/internal/src/libos/cargo-target/debug/deps; export CODECOV_TOKEN="${{ secrets.COV_TOKEN }}"; bash <(curl -s https://codecov.io/bash)"
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v2
+      with:
+        token: ${{ secrets.COV_TOKEN }}
+        directory: /root/occlum/build/internal/src/libos/cargo-target/debug/deps/
+        verbose: true
 
     - name: Clean the environment
       if: ${{ always() }}
