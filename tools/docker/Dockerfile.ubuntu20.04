@@ -133,7 +133,7 @@ RUN git clone -b sgx_2.15.1_for_occlum https://github.com/occlum/linux-sgx && \
 # Download the Occlum source
 ARG OCCLUM_BRANCH
 WORKDIR /root
-RUN git clone -b $OCCLUM_BRANCH https://github.com/occlum/occlum && \
+RUN git clone -b $OCCLUM_BRANCH https://github.com/guzongmin/occlum && \
     cp -r /root/occlum/tools/toolchains/* /tmp/ && mkdir -p /opt/occlum/ && \
     cp /root/occlum/tools/docker/start_aesm.sh /opt/occlum/
 
