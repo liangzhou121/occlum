@@ -183,13 +183,25 @@ fn new_process_common(
 
     let exec_elf_hdr = ElfFile::new(&elf_inode, &mut elf_buf, elf_header)
         .cause_err(|e| errno!(e.errno(), "invalid executable"))?;
-    let ldso_path = exec_elf_hdr
-        .elf_interpreter()
-        .ok_or_else(|| errno!(EINVAL, "cannot find the interpreter segment"))?;
-    trace!("ldso_path = {:?}", ldso_path);
-    let (ldso_inode, mut ldso_elf_hdr_buf, ldso_elf_header) =
-        load_file_hdr_to_vec(ldso_path, current_ref)
-            .cause_err(|e| errno!(e.errno(), "cannot load ld.so"))?;
+
+    let ldso_path = exec_elf_hdr.elf_interpreter();
+
+    let ((ldso_inode, mut ldso_elf_hdr_buf, ldso_elf_header), ldso_path) = match ldso_path {
+        // Normal elf file with dynamic linking
+        Some(ldso_path) => (
+            load_file_hdr_to_vec(ldso_path, current_ref)
+                .cause_err(|e| errno!(e.errno(), "cannot load ld.so"))?,
+            ldso_path,
+        ),
+        // Static link elf file
+        _ => (
+            // the elf file self is the loader.
+            // the elf file is verified in the previous code, just unwrap it
+            load_file_hdr_to_vec(&elf_path[..], current_ref).unwrap(),
+            &elf_path[..],
+        ),
+    };
+
     let ldso_elf_header = if ldso_elf_header.is_none() {
         return_errno!(ENOEXEC, "ldso header is not ELF format");
     } else {
