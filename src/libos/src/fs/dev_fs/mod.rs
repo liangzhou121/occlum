@@ -12,6 +12,7 @@ use self::dev_random::DevRandom;
 use self::dev_sgx::DevSgx;
 use self::dev_shm::DevShm;
 use self::dev_zero::DevZero;
+use self::dev_dri::DevDri;
 
 mod dev_fd;
 mod dev_null;
@@ -19,6 +20,7 @@ mod dev_random;
 mod dev_sgx;
 mod dev_shm;
 mod dev_zero;
+mod dev_dri;
 
 /// API to initialize the DevFS
 pub fn init_devfs() -> Result<Arc<MountFS>> {
@@ -31,6 +33,8 @@ pub fn init_devfs() -> Result<Arc<MountFS>> {
     devfs.add("random", Arc::clone(&dev_random))?;
     devfs.add("urandom", Arc::clone(&dev_random))?;
     devfs.add("arandom", Arc::clone(&dev_random))?;
+    let devdri = Arc::new(DevDri) as _;
+    devfs.add("dri", devdri)?;
     let dev_sgx = Arc::new(DevSgx) as _;
     devfs.add("sgx", dev_sgx)?;
     let dev_shm = Arc::new(DevShm) as _;
