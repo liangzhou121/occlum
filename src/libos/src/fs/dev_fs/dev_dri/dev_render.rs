@@ -1,4 +1,5 @@
 use super::*;
+use rcore_fs::vfs::FsError::DeviceError;
 
 #[derive(Debug)]
 pub struct DevRender;
@@ -35,14 +36,50 @@ impl INode for DevRender {
         })
     }
 
-    fn io_control(&self, _cmd: u32, _data: usize) -> vfs::Result<()> {
+    fn io_control(&self, cmd: u32, data: usize) -> vfs::Result<()> {
         let mut ioctl_cmd =
-            unsafe { IoctlCmd::new(_cmd, _data as *mut u8).map_err(|_| FsError::InvalidParam)? };
-        self.ioctl(&mut ioctl_cmd).map_err(|e| {
-            error!("{}", e.backtrace());
-            FsError::IOCTLError
-        })?;
-        Ok(())
+            unsafe { IoctlCmd::new(cmd, data as *mut u8).map_err(|_| FsError::InvalidParam)? };
+
+        let ioctl = |ioctl_cmd: IoctlCmd| -> Result<i32> {
+            let mut render_fd = RENDER_FD.lock().unwrap();
+            if render_fd.is_none() {
+                let fd = try_libc!({
+                    let mut fd: i32 = 0;
+                    let status = occlum_open_i915(&mut fd as *mut i32);
+                    assert!(status == sgx_status_t::SGX_SUCCESS);
+                    fd
+                });
+
+                if fd < 0 {
+                    return return_errno!(EACCES, "failed to open i915 device");
+                }
+
+                *render_fd = Some(fd);
+            }
+
+            let render_fd = render_fd.unwrap();
+            let cmd_num = ioctl_cmd.cmd_num() as c_int;
+            let cmd_arg_ptr = ioctl_cmd.arg_ptr() as *mut c_void;
+            let ret = try_libc!({
+                let mut retval: i32 = 0;
+                let status = occlum_ocall_ioctl(
+                    &mut retval as *mut i32,
+                    render_fd,
+                    cmd_num,
+                    cmd_arg_ptr,
+                    ioctl_cmd.arg_len(),
+                );
+                assert!(status == sgx_status_t::SGX_SUCCESS);
+                retval
+            });
+            Ok(ret)
+        };
+
+        match ioctl(ioctl_cmd) {
+            Ok(0) => Ok(()),
+            Ok(e) => Err(DeviceError(e)),
+            _ => Err(FsError::IOCTLError),
+        }
     }
 
     fn as_any_ref(&self) -> &dyn Any {
@@ -50,8 +87,10 @@ impl INode for DevRender {
     }
 }
 
-impl DevRender {
-    fn ioctl(&self, cmd: &mut IoctlCmd) -> Result<i32> {
-        Ok(0)
-    }
+lazy_static! {
+    pub static ref RENDER_FD: SgxMutex<Option<i32>> = { SgxMutex::new(None) };
+}
+
+extern "C" {
+    pub fn occlum_open_render(ret: *mut i32) -> sgx_status_t;
 }

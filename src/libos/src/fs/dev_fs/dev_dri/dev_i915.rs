@@ -1,4 +1,5 @@
 use super::*;
+use rcore_fs::vfs::FsError::DeviceError;
 
 #[derive(Debug)]
 pub struct Devi915;
@@ -35,14 +36,50 @@ impl INode for Devi915 {
         })
     }
 
-    fn io_control(&self, _cmd: u32, _data: usize) -> vfs::Result<()> {
+    fn io_control(&self, cmd: u32, data: usize) -> vfs::Result<()> {
         let mut ioctl_cmd =
-            unsafe { IoctlCmd::new(_cmd, _data as *mut u8).map_err(|_| FsError::InvalidParam)? };
-        self.ioctl(&mut ioctl_cmd).map_err(|e| {
-            error!("{}", e.backtrace());
-            FsError::IOCTLError
-        })?;
-        Ok(())
+            unsafe { IoctlCmd::new(cmd, data as *mut u8).map_err(|_| FsError::InvalidParam)? };
+
+        let ioctl = |ioctl_cmd: IoctlCmd| -> Result<i32> {
+            let mut i915_fd = I915FD.lock().unwrap();
+            if i915_fd.is_none() {
+                let fd = try_libc!({
+                    let mut fd: i32 = 0;
+                    let status = occlum_open_i915(&mut fd as *mut i32);
+                    assert!(status == sgx_status_t::SGX_SUCCESS);
+                    fd
+                });
+
+                if fd < 0 {
+                    return return_errno!(EACCES, "failed to open i915 device");
+                }
+
+                *i915_fd = Some(fd);
+            }
+
+            let i915_fd = i915_fd.unwrap();
+            let cmd_num = ioctl_cmd.cmd_num() as c_int;
+            let cmd_arg_ptr = ioctl_cmd.arg_ptr() as *mut c_void;
+            let ret = try_libc!({
+                let mut retval: i32 = 0;
+                let status = occlum_ocall_ioctl(
+                    &mut retval as *mut i32,
+                    i915_fd,
+                    cmd_num,
+                    cmd_arg_ptr,
+                    ioctl_cmd.arg_len(),
+                );
+                assert!(status == sgx_status_t::SGX_SUCCESS);
+                retval
+            });
+            Ok(ret)
+        };
+
+        match ioctl(ioctl_cmd) {
+            Ok(0) => Ok(()),
+            Ok(e) => Err(DeviceError(e)),
+            _ => Err(FsError::IOCTLError),
+        }
     }
 
     fn as_any_ref(&self) -> &dyn Any {
@@ -50,8 +87,10 @@ impl INode for Devi915 {
     }
 }
 
-impl Devi915 {
-    fn ioctl(&self, cmd: &mut IoctlCmd) -> Result<i32> {
-        Ok(0)
-    }
+lazy_static! {
+    pub static ref I915FD: SgxMutex<Option<i32>> = { SgxMutex::new(None) };
+}
+
+extern "C" {
+    pub fn occlum_open_i915(ret: *mut i32) -> sgx_status_t;
 }

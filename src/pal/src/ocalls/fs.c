@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <sys/vfs.h>
+#include <fcntl.h>
 
 void occlum_ocall_sync(void) {
     sync();
@@ -45,4 +46,12 @@ int occlum_ocall_ioctl(int fd, int request, void *arg, size_t len) {
 
 int occlum_ocall_statfs(const char *path, struct statfs *buf) {
     return statfs(path, buf);
+}
+
+int occlum_open_i915() {
+    return open("/dev/dri/card0", O_RDONLY);
+}
+
+int occlum_open_render() {
+    return open("/dev/dri/renderD128", O_RDONLY);
 }

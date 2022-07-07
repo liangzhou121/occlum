@@ -6,21 +6,21 @@ use rcore_fs_devfs::DevFS;
 use rcore_fs_mountfs::MountFS;
 use rcore_fs_ramfs::RamFS;
 
+use self::dev_dri::DevDri;
 use self::dev_fd::DevFd;
 use self::dev_null::DevNull;
 use self::dev_random::DevRandom;
 use self::dev_sgx::DevSgx;
 use self::dev_shm::DevShm;
 use self::dev_zero::DevZero;
-use self::dev_dri::DevDri;
 
+mod dev_dri;
 mod dev_fd;
 mod dev_null;
 mod dev_random;
 mod dev_sgx;
 mod dev_shm;
 mod dev_zero;
-mod dev_dri;
 
 /// API to initialize the DevFS
 pub fn init_devfs() -> Result<Arc<MountFS>> {

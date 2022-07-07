@@ -310,5 +310,8 @@ enclave {
            uint32_t sig_rl_size,
            [out] uint32_t* p_quote_size
         );
+
+        int occlum_open_i915() propagate_errno;
+        int occlum_open_render() propagate_errno;
     };
 };
