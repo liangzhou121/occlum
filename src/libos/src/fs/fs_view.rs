@@ -1,6 +1,9 @@
 /// Present a per-process view of FS.
 use super::*;
 
+use crate::fs::device_file::DeviceFile;
+use rcore_fs::vfs::FileType::RealDevice;
+
 #[derive(Debug, Clone)]
 pub struct FsView {
     root: String,
@@ -106,6 +109,13 @@ impl FsView {
             }
         };
         let abs_path = self.convert_to_abs_path(&path);
+
+        if let Ok(metadata) = inode.metadata() {
+            if metadata.type_ == RealDevice {
+                return Ok(Arc::new(DeviceFile::open(inode, &abs_path, flags)?));
+            }
+        }
+
         Ok(Arc::new(INodeFile::open(inode, &abs_path, flags)?))
     }
 

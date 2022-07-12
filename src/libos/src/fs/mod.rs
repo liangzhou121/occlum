@@ -40,6 +40,7 @@ pub use self::timer_file::{AsTimer, TimerCreationFlags, TimerFile};
 
 pub mod channel;
 mod dev_fs;
+mod device_file;
 mod event_file;
 mod events;
 mod file;
