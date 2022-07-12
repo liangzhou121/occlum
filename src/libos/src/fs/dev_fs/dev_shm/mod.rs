@@ -1,5 +1,9 @@
 use super::*;
 
+mod dev_shm;
+
+use self::dev_shm::*;
+
 #[derive(Debug)]
 pub struct DevShm;
 
@@ -33,6 +37,17 @@ impl INode for DevShm {
             gid: 0,
             rdev: 0,
         })
+    }
+
+    fn find(&self, name: &str) -> vfs::Result<Arc<dyn INode>> {
+        error!("the name is {:?}", name);
+        // Ok(Arc::new(DevShmFile))
+        Err(FsError::EntryNotFound)
+    }
+
+    /// Create a new INode in the directory
+    fn create(&self, name: &str, type_: FileType, mode: u16) -> vfs::Result<Arc<dyn INode>> {
+        Ok(Arc::new(DevShmFile))
     }
 
     fn as_any_ref(&self) -> &dyn Any {

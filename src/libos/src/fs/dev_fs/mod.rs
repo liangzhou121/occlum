@@ -6,6 +6,7 @@ use rcore_fs_devfs::DevFS;
 use rcore_fs_mountfs::MountFS;
 use rcore_fs_ramfs::RamFS;
 
+use self::dev_dri::DevDri;
 use self::dev_fd::DevFd;
 use self::dev_null::DevNull;
 use self::dev_random::DevRandom;
@@ -13,6 +14,7 @@ use self::dev_sgx::DevSgx;
 use self::dev_shm::DevShm;
 use self::dev_zero::DevZero;
 
+mod dev_dri;
 mod dev_fd;
 mod dev_null;
 mod dev_random;
@@ -31,6 +33,8 @@ pub fn init_devfs() -> Result<Arc<MountFS>> {
     devfs.add("random", Arc::clone(&dev_random))?;
     devfs.add("urandom", Arc::clone(&dev_random))?;
     devfs.add("arandom", Arc::clone(&dev_random))?;
+    let devdri = Arc::new(DevDri) as _;
+    devfs.add("dri", devdri)?;
     let dev_sgx = Arc::new(DevSgx) as _;
     devfs.add("sgx", dev_sgx)?;
     let dev_shm = Arc::new(DevShm) as _;
@@ -38,14 +42,14 @@ pub fn init_devfs() -> Result<Arc<MountFS>> {
     let dev_fd = Arc::new(DevFd) as _;
     devfs.add("fd", dev_fd);
     let mountable_devfs = MountFS::new(devfs);
-    // Mount the ramfs at '/shm'
-    let ramfs = RamFS::new();
-    mount_fs_at(
-        ramfs,
-        &mountable_devfs.root_inode(),
-        &Path::new("/shm"),
-        true,
-    )?;
+    // // Mount the ramfs at '/shm'
+    // let ramfs = RamFS::new();
+    // mount_fs_at(
+    //     ramfs,
+    //     &mountable_devfs.root_inode(),
+    //     &Path::new("/shm"),
+    //     true,
+    // )?;
     // TODO: Add stdio(stdin, stdout, stderr) into DevFS
     Ok(mountable_devfs)
 }

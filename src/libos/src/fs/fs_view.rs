@@ -1,6 +1,10 @@
 /// Present a per-process view of FS.
 use super::*;
 
+use crate::fs::device_file::DeviceFile;
+use crate::fs::sharedmemory_file::SharedMemoryFile;
+use rcore_fs::vfs::FileType::{RealDevice, SharedMemory};
+
 #[derive(Debug, Clone)]
 pub struct FsView {
     root: String,
@@ -121,6 +125,19 @@ impl FsView {
             }
         };
         let abs_path = self.convert_to_abs_path(&path);
+
+        if let Ok(metadata) = inode.metadata() {
+            if metadata.type_ == RealDevice {
+                return Ok(Arc::new(DeviceFile::open(inode, &abs_path, flags)?));
+            }
+        }
+
+        if let Ok(metadata) = inode.metadata() {
+            if metadata.type_ == SharedMemory {
+                return Ok(Arc::new(SharedMemoryFile::open(inode, &abs_path, flags)?));
+            }
+        }
+
         Ok(Arc::new(INodeFile::open(inode, &abs_path, flags)?))
     }
 

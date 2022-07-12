@@ -310,5 +310,28 @@ enclave {
            uint32_t sig_rl_size,
            [out] uint32_t* p_quote_size
         );
+
+        uint64_t occlum_ocall_device_mmap(
+            uint64_t addr,
+            size_t length,
+            int prot,
+            int flags,
+            int fd,
+            uint64_t offset
+        ) propagate_errno;
+
+        int occlum_ocall_device_munmap(uint64_t addr, size_t length) propagate_errno;
+
+        int occlum_ocall_open_device(
+            [in, size=device_name_buf_len] char *device_name_buf,
+            size_t device_name_buf_len,
+            uint32_t flags
+        ) propagate_errno;
+
+        int occlum_ocall_device_ioctl(
+            int fd,
+            int request,
+            uint64_t arg
+        ) propagate_errno;
     };
 };

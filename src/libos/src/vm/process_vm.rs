@@ -10,6 +10,8 @@ use super::vm_perms::VMPerms;
 use super::vm_util::{
     FileBacked, VMInitializer, VMMapAddr, VMMapOptions, VMMapOptionsBuilder, VMRemapOptions,
 };
+use crate::fs::device_file::AsDeviceFile;
+use crate::fs::sharedmemory_file::AsSharedMemoryFile;
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -187,6 +189,7 @@ impl<'a, 'b> ProcessVMBuilder<'a, 'b> {
         let mem_chunks = Arc::new(RwLock::new(chunks));
         Ok(ProcessVM {
             elf_ranges,
+            untrust_ranges: Arc::new(RwLock::new(Default::default())),
             heap_range,
             stack_range,
             brk,
@@ -272,6 +275,7 @@ type MemChunks = Arc<RwLock<HashSet<ChunkRef>>>;
 #[derive(Debug)]
 pub struct ProcessVM {
     elf_ranges: Vec<VMRange>,
+    untrust_ranges: Arc<RwLock<Vec<VMRange>>>,
     heap_range: VMRange,
     stack_range: VMRange,
     brk: AtomicUsize,
@@ -288,6 +292,7 @@ impl Default for ProcessVM {
     fn default() -> ProcessVM {
         ProcessVM {
             elf_ranges: Default::default(),
+            untrust_ranges: Arc::new(RwLock::new(Default::default())),
             heap_range: Default::default(),
             stack_range: Default::default(),
             brk: Default::default(),
@@ -483,6 +488,28 @@ impl ProcessVM {
         fd: FileDesc,
         offset: usize,
     ) -> Result<usize> {
+        if let Ok(file_ref) = current!().file(fd) {
+            if let Ok(device_file) = file_ref.as_device_file() {
+                let mapped_addr = device_file.mmap(addr, size, perms, flags, fd, offset)?;
+
+                let untrust_range = VMRange::new(mapped_addr, mapped_addr + size)?;
+                let mut untrust_ranges = self.untrust_ranges.write().unwrap();
+                untrust_ranges.push(untrust_range);
+
+                return Ok(mapped_addr);
+            } else if let Ok(sharedmemory_file) = file_ref.as_sharedmemory_file() {
+                let mapped_addr = sharedmemory_file.mmap(addr, size, perms, flags, fd, offset)?;
+
+                // let untrust_range = VMRange::new(mapped_addr, mapped_addr + size)?;
+                error!("{:#x?}", mapped_addr);
+                let untrust_range = VMRange::new(mapped_addr, mapped_addr + 4096)?;
+                let mut untrust_ranges = self.untrust_ranges.write().unwrap();
+                untrust_ranges.push(untrust_range);
+
+                return Ok(mapped_addr);
+            }
+        }
+
         let addr_option = {
             if flags.contains(MMapFlags::MAP_FIXED) {
                 VMMapAddr::Force(addr)
@@ -533,7 +560,33 @@ impl ProcessVM {
     }
 
     pub fn munmap(&self, addr: usize, size: usize) -> Result<()> {
-        USER_SPACE_VM_MANAGER.munmap(addr, size)
+        match USER_SPACE_VM_MANAGER.munmap(addr, size) {
+            Ok(()) => Ok(()),
+            Err(e) => {
+                let range = VMRange::new(addr, size)?;
+
+                let mut untrust_ranges = self.untrust_ranges.write().unwrap();
+
+                // fixme: if the range is smaller or lager than the range in the ranges
+                if let Some(index) = untrust_ranges
+                    .iter()
+                    .position(|value| value.overlap_with(&range))
+                {
+                    untrust_ranges.swap_remove(index);
+                    let mut ret: i32 = 0;
+                    let status = unsafe { occlum_ocall_device_munmap(&mut ret, addr as u64, size) };
+                    assert!(status == sgx_status_t::SGX_SUCCESS);
+
+                    if ret != 0 {
+                        return_errno!(EINVAL, "munmap failed");
+                    }
+
+                    return Ok(());
+                }
+
+                Err(e)
+            }
+        }
     }
 
     pub fn mprotect(&self, addr: usize, size: usize, perms: VMPerms) -> Result<()> {
@@ -545,7 +598,37 @@ impl ProcessVM {
         };
         let protect_range = VMRange::new_with_size(addr, size)?;
 
-        return USER_SPACE_VM_MANAGER.mprotect(addr, size, perms);
+        match USER_SPACE_VM_MANAGER.mprotect(addr, size, perms) {
+            Ok(()) => Ok(()),
+            Err(e) => {
+                let mut untrust_ranges = self.untrust_ranges.write().unwrap();
+
+                // fixme: if the range is smaller or lager than the range in the ranges
+                if let Some(index) = untrust_ranges
+                    .iter()
+                    .position(|value| value.overlap_with(&protect_range))
+                {
+                    let mut ret: i32 = 0;
+                    let status = unsafe {
+                        occlum_ocall_mprotect(
+                            &mut ret,
+                            addr as *const c_void,
+                            size,
+                            perms.bits() as i32,
+                        )
+                    };
+                    assert!(status == sgx_status_t::SGX_SUCCESS);
+
+                    if ret != 0 {
+                        return_errno!(EINVAL, "mprotect failed");
+                    }
+
+                    return Ok(());
+                }
+
+                Err(e)
+            }
+        }
     }
 
     pub fn msync(&self, addr: usize, size: usize) -> Result<()> {
@@ -647,4 +730,14 @@ impl MSyncFlags {
         }
         Ok(flags)
     }
+}
+
+extern "C" {
+    pub fn occlum_ocall_device_munmap(ret: *mut i32, addr: u64, length: size_t) -> sgx_status_t;
+    pub fn occlum_ocall_mprotect(
+        retval: *mut i32,
+        addr: *const c_void,
+        len: usize,
+        prot: i32,
+    ) -> sgx_status_t;
 }
