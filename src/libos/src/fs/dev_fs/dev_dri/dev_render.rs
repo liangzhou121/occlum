@@ -27,7 +27,7 @@ impl INode for DevRender {
             atime: Timespec { sec: 0, nsec: 0 },
             mtime: Timespec { sec: 0, nsec: 0 },
             ctime: Timespec { sec: 0, nsec: 0 },
-            type_: vfs::FileType::CharDevice,
+            type_: vfs::FileType::RealDevice,
             mode: 0o666,
             nlinks: 1,
             uid: 0,
@@ -36,61 +36,61 @@ impl INode for DevRender {
         })
     }
 
-    fn io_control(&self, cmd: u32, data: usize) -> vfs::Result<()> {
-        let mut ioctl_cmd =
-            unsafe { IoctlCmd::new(cmd, data as *mut u8).map_err(|_| FsError::InvalidParam)? };
+    // fn io_control(&self, cmd: u32, data: usize) -> vfs::Result<()> {
+    //     let mut ioctl_cmd =
+    //         unsafe { IoctlCmd::new(cmd, data as *mut u8).map_err(|_| FsError::InvalidParam)? };
 
-        let ioctl = |ioctl_cmd: IoctlCmd| -> Result<i32> {
-            let mut render_fd = RENDER_FD.lock().unwrap();
-            if render_fd.is_none() {
-                let fd = try_libc!({
-                    let mut fd: i32 = 0;
-                    let status = occlum_open_i915(&mut fd as *mut i32);
-                    assert!(status == sgx_status_t::SGX_SUCCESS);
-                    fd
-                });
+    //     let ioctl = |ioctl_cmd: IoctlCmd| -> Result<i32> {
+    //         let mut render_fd = RENDER_FD.lock().unwrap();
+    //         if render_fd.is_none() {
+    //             let fd = try_libc!({
+    //                 let mut fd: i32 = 0;
+    //                 let status = occlum_open_i915(&mut fd as *mut i32);
+    //                 assert!(status == sgx_status_t::SGX_SUCCESS);
+    //                 fd
+    //             });
 
-                if fd < 0 {
-                    return return_errno!(EACCES, "failed to open i915 device");
-                }
+    //             if fd < 0 {
+    //                 return return_errno!(EACCES, "failed to open i915 device");
+    //             }
 
-                *render_fd = Some(fd);
-            }
+    //             *render_fd = Some(fd);
+    //         }
 
-            let render_fd = render_fd.unwrap();
-            let cmd_num = ioctl_cmd.cmd_num() as c_int;
-            let cmd_arg_ptr = ioctl_cmd.arg_ptr() as *mut c_void;
-            let ret = try_libc!({
-                let mut retval: i32 = 0;
-                let status = occlum_ocall_ioctl(
-                    &mut retval as *mut i32,
-                    render_fd,
-                    cmd_num,
-                    cmd_arg_ptr,
-                    ioctl_cmd.arg_len(),
-                );
-                assert!(status == sgx_status_t::SGX_SUCCESS);
-                retval
-            });
-            Ok(ret)
-        };
+    //         let render_fd = render_fd.unwrap();
+    //         let cmd_num = ioctl_cmd.cmd_num() as c_int;
+    //         let cmd_arg_ptr = ioctl_cmd.arg_ptr() as *mut c_void;
+    //         let ret = try_libc!({
+    //             let mut retval: i32 = 0;
+    //             let status = occlum_ocall_ioctl(
+    //                 &mut retval as *mut i32,
+    //                 render_fd,
+    //                 cmd_num,
+    //                 cmd_arg_ptr,
+    //                 ioctl_cmd.arg_len(),
+    //             );
+    //             assert!(status == sgx_status_t::SGX_SUCCESS);
+    //             retval
+    //         });
+    //         Ok(ret)
+    //     };
 
-        match ioctl(ioctl_cmd) {
-            Ok(0) => Ok(()),
-            Ok(e) => Err(DeviceError(e)),
-            _ => Err(FsError::IOCTLError),
-        }
-    }
+    //     match ioctl(ioctl_cmd) {
+    //         Ok(0) => Ok(()),
+    //         Ok(e) => Err(DeviceError(e)),
+    //         _ => Err(FsError::IOCTLError),
+    //     }
+    // }
 
     fn as_any_ref(&self) -> &dyn Any {
         self
     }
 }
 
-lazy_static! {
-    pub static ref RENDER_FD: SgxMutex<Option<i32>> = { SgxMutex::new(None) };
-}
+// lazy_static! {
+//     pub static ref RENDER_FD: SgxMutex<Option<i32>> = { SgxMutex::new(None) };
+// }
 
-extern "C" {
-    pub fn occlum_open_render(ret: *mut i32) -> sgx_status_t;
-}
+// extern "C" {
+//     pub fn occlum_open_render(ret: *mut i32) -> sgx_status_t;
+// }

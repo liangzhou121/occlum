@@ -8,6 +8,7 @@ use super::user_space_vm::USER_SPACE_VM_MANAGER;
 use super::vm_area::VMArea;
 use super::vm_perms::VMPerms;
 use super::vm_util::{VMInitializer, VMMapAddr, VMMapOptions, VMMapOptionsBuilder, VMRemapOptions};
+use crate::fs::device_file::AsDeviceFile;
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -471,6 +472,11 @@ impl ProcessVM {
         fd: FileDesc,
         offset: usize,
     ) -> Result<usize> {
+        let file_ref = current!().file(fd)?;
+        if let Ok(device_file) = file_ref.as_device_file() {
+            return device_file.mmap(addr, size, perms, flags, fd, offset);
+        }
+
         let addr_option = {
             if flags.contains(MMapFlags::MAP_FIXED) {
                 VMMapAddr::Force(addr)

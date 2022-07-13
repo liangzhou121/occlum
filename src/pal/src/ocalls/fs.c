@@ -55,3 +55,14 @@ int occlum_open_i915() {
 int occlum_open_render() {
     return open("/dev/dri/renderD128", O_RDONLY);
 }
+
+uint64_t occlum_device_mmap(
+    uint64_t addr,
+    size_t length,
+    int prot,
+    int flags,
+    int fd,
+    uint64_t offset
+) {
+    return (uint64_t)mmap((void *)addr, length, prot, flags, fd, offset);
+}
