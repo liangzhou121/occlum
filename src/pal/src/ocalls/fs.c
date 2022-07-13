@@ -48,12 +48,22 @@ int occlum_ocall_statfs(const char *path, struct statfs *buf) {
     return statfs(path, buf);
 }
 
-int occlum_open_i915() {
-    return open("/dev/dri/card0", O_RDONLY);
-}
+// int occlum_open_i915() {
+//     return open("/dev/dri/card0", O_RDWR);
+// }
 
-int occlum_open_render() {
-    return open("/dev/dri/renderD128", O_RDONLY);
+// int occlum_open_render() {
+//     return open("/dev/dri/renderD128", O_RDWR);
+// }
+
+int occlum_ocall_open_device(
+    char *device_name_buf,
+    size_t device_name_buf_len,
+    uint32_t flags
+) {
+    int fd = open(device_name_buf, flags);
+    printf("open device %s, fd %d\n", device_name_buf, fd);
+    return fd;
 }
 
 uint64_t occlum_device_mmap(
@@ -64,5 +74,9 @@ uint64_t occlum_device_mmap(
     int fd,
     uint64_t offset
 ) {
-    return (uint64_t)mmap((void *)addr, length, prot, flags, fd, offset);
+    printf("addr %x, length %d prot %d flags %d fd %d offset %llx\n", addr, length, prot,
+           flags, fd, offset);
+    void *p = mmap((void *)addr, length, prot, flags, fd, offset);
+    printf("ret %p\n", p);
+    return (uint64_t)p;
 }

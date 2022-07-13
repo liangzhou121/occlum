@@ -472,9 +472,10 @@ impl ProcessVM {
         fd: FileDesc,
         offset: usize,
     ) -> Result<usize> {
-        let file_ref = current!().file(fd)?;
-        if let Ok(device_file) = file_ref.as_device_file() {
-            return device_file.mmap(addr, size, perms, flags, fd, offset);
+        if let Ok(file_ref) = current!().file(fd) {
+            if let Ok(device_file) = file_ref.as_device_file() {
+                return device_file.mmap(addr, size, perms, flags, fd, offset);
+            }
         }
 
         let addr_option = {

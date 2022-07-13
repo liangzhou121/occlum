@@ -2,6 +2,7 @@ use super::*;
 
 use crate::vm::{MMapFlags, VMPerms};
 use rcore_fs::vfs::FileType::RealDevice;
+use std::ffi::CString;
 
 #[derive(Debug)]
 pub struct DeviceFile {
@@ -40,6 +41,7 @@ impl File for DeviceFile {
 
 impl DeviceFile {
     pub fn open(inode: Arc<dyn INode>, abs_path: &str, flags: u32) -> Result<Self> {
+        error!("path {:?} len {:?}", abs_path, abs_path.len());
         if inode.metadata().is_err() {
             return_errno!(EACCES, "File has no metadata");
         }
@@ -50,11 +52,18 @@ impl DeviceFile {
         }
 
         let raw_host_fd = try_libc!({
+            let device_path = CString::new(abs_path).unwrap();
             let mut fd: i32 = 0;
-            let status = occlum_open_i915(&mut fd as *mut i32);
+            let status = occlum_ocall_open_device(
+                &mut fd as *mut i32,
+                device_path.as_ptr() as *const u8,
+                abs_path.len() + 1,
+                flags,
+            );
             assert!(status == sgx_status_t::SGX_SUCCESS);
             fd
         });
+        error!("raw_host_fd {:?}", raw_host_fd);
 
         if raw_host_fd < 0 {
             return_errno!(EACCES, "File open failed");
@@ -80,6 +89,14 @@ impl DeviceFile {
         fd: FileDesc,
         offset: usize,
     ) -> Result<usize> {
+        error!(
+            "device mmap: size:{:?} perms:{:?} flags:{:?} fd:{:?} offset:{:#01x}",
+            size,
+            perms.bits(),
+            flags.bits(),
+            self.host_fd.to_raw(),
+            offset
+        );
         let mut ret_addr: u64 = 0;
         unsafe {
             occlum_device_mmap(
@@ -88,7 +105,7 @@ impl DeviceFile {
                 size as size_t,
                 perms.bits() as i32,
                 flags.bits() as i32,
-                fd as i32,
+                self.host_fd.to_raw() as i32,
                 offset as u64,
             );
         }
@@ -109,7 +126,12 @@ impl AsDeviceFile for FileRef {
 }
 
 extern "C" {
-    pub fn occlum_open_i915(ret: *mut i32) -> sgx_status_t;
+    pub fn occlum_ocall_open_device(
+        ret: *mut i32,
+        device_name_buf: *const u8,
+        device_name_buf_len: size_t,
+        flags: u32,
+    ) -> sgx_status_t;
     pub fn occlum_device_mmap(
         ret_addr: *mut u64,
         addr: u64,
