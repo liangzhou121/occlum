@@ -21,12 +21,19 @@ impl File for DeviceFile {
         let cmd_arg_ptr = cmd.arg_ptr() as *mut c_void;
         let ret = try_libc!({
             let mut retval: i32 = 0;
-            let status = occlum_ocall_ioctl(
+            // let status = occlum_ocall_ioctl(
+            //     &mut retval as *mut i32,
+            //     host_fd,
+            //     cmd_num,
+            //     cmd_arg_ptr,
+            //     cmd.arg_len(),
+            // );
+
+            let status = occlum_ocall_device_ioctl(
                 &mut retval as *mut i32,
                 host_fd,
                 cmd_num,
-                cmd_arg_ptr,
-                cmd.arg_len(),
+                cmd_arg_ptr as u64,
             );
             assert!(status == sgx_status_t::SGX_SUCCESS);
             retval
@@ -153,4 +160,11 @@ extern "C" {
     ) -> sgx_status_t;
 
     pub fn occlum_ocall_device_munmap(ret: *mut i32, addr: u64, length: size_t) -> sgx_status_t;
+
+    pub fn occlum_ocall_device_ioctl(
+        ret: *mut i32,
+        fd: c_int,
+        request: c_int,
+        arg: u64,
+    ) -> sgx_status_t;
 }

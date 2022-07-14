@@ -5,6 +5,7 @@
 #include <sys/ioctl.h>
 #include <sys/vfs.h>
 #include <fcntl.h>
+#include <sys/mman.h>
 
 void occlum_ocall_sync(void) {
     sync();
@@ -48,21 +49,13 @@ int occlum_ocall_statfs(const char *path, struct statfs *buf) {
     return statfs(path, buf);
 }
 
-// int occlum_open_i915() {
-//     return open("/dev/dri/card0", O_RDWR);
-// }
-
-// int occlum_open_render() {
-//     return open("/dev/dri/renderD128", O_RDWR);
-// }
-
 int occlum_ocall_open_device(
     char *device_name_buf,
     size_t device_name_buf_len,
     uint32_t flags
 ) {
     int fd = open(device_name_buf, flags);
-    printf("open device %s, fd %d\n", device_name_buf, fd);
+    // printf("open device %s, fd %d\n", device_name_buf, fd);
     return fd;
 }
 
@@ -74,14 +67,29 @@ uint64_t occlum_ocall_device_mmap(
     int fd,
     uint64_t offset
 ) {
-    printf("addr %x, length %d prot %d flags %d fd %d offset %llx\n", addr, length, prot,
-           flags, fd, offset);
+    // printf("addr %x, length %d prot %d flags %d fd %d offset %lx ", addr, length, prot,
+    //        flags, fd, offset);
     void *p = mmap((void *)addr, length, prot, flags, fd, offset);
-    printf("ret %p\n", p);
+
+    // void *p = mmap(NULL, length, PROT_READ | PROT_WRITE , MAP_SHARED, fd, offset);
+
+    // if ( p != (void *) -1 ) {
+    //     printf("ret %p\n", p);
+    //     int *test_v = (int *)p;
+    //     printf("try to acccess the mmapped address %x\n", *test_v);
+    // }
     return (uint64_t)p;
 }
 
 int occlum_ocall_device_munmap(uint64_t addr, size_t length) {
     int ret = munmap((void *)addr, length);
-    printf("munmap addr %x, size %x, ret %p\n", addr, length, ret);
+    // printf("munmap addr %x, size %x, ret %p\n", addr, length, ret);
+}
+
+int occlum_ocall_device_ioctl(
+    int fd,
+    int request,
+    uint64_t arg
+) {
+    return ioctl(fd, request, (void *)arg);
 }

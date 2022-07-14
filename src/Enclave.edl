@@ -327,5 +327,11 @@ enclave {
             size_t device_name_buf_len,
             uint32_t flags
         ) propagate_errno;
+
+        int occlum_ocall_device_ioctl(
+            int fd,
+            int request,
+            uint64_t arg
+        ) propagate_errno;
     };
 };
