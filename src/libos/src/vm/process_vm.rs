@@ -534,7 +534,17 @@ impl ProcessVM {
     }
 
     pub fn munmap(&self, addr: usize, size: usize) -> Result<()> {
-        USER_SPACE_VM_MANAGER.munmap(addr, size)
+        match USER_SPACE_VM_MANAGER.munmap(addr, size) {
+            Ok(()) => Ok(()),
+            _ => {
+                // Fixme: force unmap is not correct
+                let mut ret: i32 = 0;
+                unsafe {
+                    occlum_ocall_device_munmap(&mut ret, addr as u64, size);
+                }
+                Ok(())
+            }
+        }
     }
 
     pub fn mprotect(&self, addr: usize, size: usize, perms: VMPerms) -> Result<()> {
@@ -648,4 +658,8 @@ impl MSyncFlags {
         }
         Ok(flags)
     }
+}
+
+extern "C" {
+    pub fn occlum_ocall_device_munmap(ret: *mut i32, addr: u64, length: size_t) -> sgx_status_t;
 }

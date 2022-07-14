@@ -66,7 +66,7 @@ int occlum_ocall_open_device(
     return fd;
 }
 
-uint64_t occlum_device_mmap(
+uint64_t occlum_ocall_device_mmap(
     uint64_t addr,
     size_t length,
     int prot,
@@ -79,4 +79,9 @@ uint64_t occlum_device_mmap(
     void *p = mmap((void *)addr, length, prot, flags, fd, offset);
     printf("ret %p\n", p);
     return (uint64_t)p;
+}
+
+int occlum_ocall_device_munmap(uint64_t addr, size_t length) {
+    int ret = munmap((void *)addr, length);
+    printf("munmap addr %x, size %x, ret %p\n", addr, length, ret);
 }

@@ -311,7 +311,7 @@ enclave {
            [out] uint32_t* p_quote_size
         );
 
-        uint64_t occlum_device_mmap(
+        uint64_t occlum_ocall_device_mmap(
             uint64_t addr,
             size_t length,
             int prot,
@@ -319,6 +319,8 @@ enclave {
             int fd,
             uint64_t offset
         ) propagate_errno;
+
+        int occlum_ocall_device_munmap(uint64_t addr, size_t length) propagate_errno;
 
         int occlum_ocall_open_device(
             [in, size=device_name_buf_len] char *device_name_buf,

@@ -99,7 +99,7 @@ impl DeviceFile {
         );
         let mut ret_addr: u64 = 0;
         unsafe {
-            occlum_device_mmap(
+            occlum_ocall_device_mmap(
                 &mut ret_addr,
                 addr as u64,
                 size as size_t,
@@ -110,6 +110,15 @@ impl DeviceFile {
             );
         }
         Ok(ret_addr as usize)
+    }
+
+    pub fn munmap(&self, addr: usize, size: usize) -> Result<()> {
+        let mut ret: i32 = 0;
+        unsafe {
+            occlum_ocall_device_munmap(&mut ret, addr as u64, size);
+        }
+
+        Ok(())
     }
 }
 
@@ -132,7 +141,8 @@ extern "C" {
         device_name_buf_len: size_t,
         flags: u32,
     ) -> sgx_status_t;
-    pub fn occlum_device_mmap(
+
+    pub fn occlum_ocall_device_mmap(
         ret_addr: *mut u64,
         addr: u64,
         length: size_t,
@@ -141,4 +151,6 @@ extern "C" {
         fd: c_int,
         offset: u64,
     ) -> sgx_status_t;
+
+    pub fn occlum_ocall_device_munmap(ret: *mut i32, addr: u64, length: size_t) -> sgx_status_t;
 }
