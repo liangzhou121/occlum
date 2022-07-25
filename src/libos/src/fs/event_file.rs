@@ -117,6 +117,18 @@ impl File for EventFile {
     }
 }
 
+impl From<HostFd> for EventFile {
+    fn from(host_fd: HostFd) -> Self {
+        let host_events = Atomic::new(IoEvents::empty());
+        let notifier = IoNotifier::new();
+        Self {
+            host_fd,
+            host_events,
+            notifier,
+        }
+    }
+}
+
 pub trait AsEvent {
     fn as_event(&self) -> Result<&EventFile>;
 }
