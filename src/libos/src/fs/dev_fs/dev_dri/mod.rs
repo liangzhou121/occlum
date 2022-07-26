@@ -44,6 +44,7 @@ impl INode for DevDri {
     fn find(&self, name: &str) -> vfs::Result<Arc<dyn INode>> {
         match name {
             "card0" => Ok(Arc::new(Devi915)),
+            "card1" => Ok(Arc::new(Devi915)),
             "renderD128" => Ok(Arc::new(DevRender)),
             _ => Err(FsError::NotSupported),
         }
