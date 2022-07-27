@@ -184,6 +184,7 @@ impl<'a, 'b> ProcessVMBuilder<'a, 'b> {
         let mem_chunks = Arc::new(RwLock::new(chunks));
         Ok(ProcessVM {
             elf_ranges,
+            untrust_ranges: Arc::new(RwLock::new(Default::default())),
             heap_range,
             stack_range,
             brk,
@@ -269,6 +270,7 @@ type MemChunks = Arc<RwLock<HashSet<ChunkRef>>>;
 #[derive(Debug)]
 pub struct ProcessVM {
     elf_ranges: Vec<VMRange>,
+    untrust_ranges: Arc<RwLock<Vec<VMRange>>>,
     heap_range: VMRange,
     stack_range: VMRange,
     brk: AtomicUsize,
@@ -285,6 +287,7 @@ impl Default for ProcessVM {
     fn default() -> ProcessVM {
         ProcessVM {
             elf_ranges: Default::default(),
+            untrust_ranges: Arc::new(RwLock::new(Default::default())),
             heap_range: Default::default(),
             stack_range: Default::default(),
             brk: Default::default(),
@@ -474,7 +477,13 @@ impl ProcessVM {
     ) -> Result<usize> {
         if let Ok(file_ref) = current!().file(fd) {
             if let Ok(device_file) = file_ref.as_device_file() {
-                return device_file.mmap(addr, size, perms, flags, fd, offset);
+                let mapped_addr = device_file.mmap(addr, size, perms, flags, fd, offset)?;
+
+                let untrust_range = VMRange::new(mapped_addr, mapped_addr + size)?;
+                let mut untrust_ranges = self.untrust_ranges.write().unwrap();
+                untrust_ranges.push(untrust_range);
+
+                return Ok(mapped_addr);
             }
         }
 
@@ -536,13 +545,29 @@ impl ProcessVM {
     pub fn munmap(&self, addr: usize, size: usize) -> Result<()> {
         match USER_SPACE_VM_MANAGER.munmap(addr, size) {
             Ok(()) => Ok(()),
-            _ => {
-                // Fixme: force unmap is not correct
-                let mut ret: i32 = 0;
-                unsafe {
-                    occlum_ocall_device_munmap(&mut ret, addr as u64, size);
+            Err(e) => {
+                let range = VMRange::new(addr, size)?;
+
+                let mut untrust_ranges = self.untrust_ranges.write().unwrap();
+
+                // fixme: if the range is smaller or lager than the range in the ranges
+                if let Some(index) = untrust_ranges
+                    .iter()
+                    .position(|value| value.overlap_with(&range))
+                {
+                    untrust_ranges.swap_remove(index);
+                    let mut ret: i32 = 0;
+                    let status = unsafe { occlum_ocall_device_munmap(&mut ret, addr as u64, size) };
+                    assert!(status == sgx_status_t::SGX_SUCCESS);
+
+                    if ret != 0 {
+                        return_errno!(EINVAL, "munmap failed");
+                    }
+
+                    return Ok(());
                 }
-                Ok(())
+
+                Err(e)
             }
         }
     }
