@@ -6,11 +6,13 @@ use super::*;
 
 use intrusive_collections::rbtree::{Link, RBTree};
 use intrusive_collections::{intrusive_adapter, KeyAdapter};
+use rcore_fs::vfs::INode;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct VMArea {
     range: VMRange,
     perms: VMPerms,
+    init_file: Option<(FileRef, usize)>,
     writeback_file: Option<(FileRef, usize)>,
     pid: pid_t,
 }
@@ -19,12 +21,14 @@ impl VMArea {
     pub fn new(
         range: VMRange,
         perms: VMPerms,
+        init_file: Option<(FileRef, usize)>,
         writeback_file: Option<(FileRef, usize)>,
         pid: pid_t,
     ) -> Self {
         Self {
             range,
             perms,
+            init_file,
             writeback_file,
             pid,
         }
@@ -51,7 +55,8 @@ impl VMArea {
             };
             (new_file, new_file_offset)
         });
-        Self::new(new_range, new_perms, new_writeback_file, pid)
+        let init_file = vma.init_file.clone();
+        Self::new(new_range, new_perms, init_file, new_writeback_file, pid)
     }
 
     pub fn perms(&self) -> VMPerms {
@@ -64,6 +69,10 @@ impl VMArea {
 
     pub fn pid(&self) -> pid_t {
         self.pid
+    }
+
+    pub fn init_file(&self) -> &Option<(FileRef, usize)> {
+        &self.init_file
     }
 
     pub fn writeback_file(&self) -> &Option<(FileRef, usize)> {
@@ -190,6 +199,12 @@ impl Deref for VMArea {
     }
 }
 
+// impl Debug for VMArea {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         write!(f, "{:?}", self.range)
+//     }
+// }
+
 #[derive(Clone)]
 pub struct VMAObj {
     link: Link,
@@ -224,21 +239,22 @@ impl VMAObj {
     }
 }
 
-impl VMArea {
-    pub fn new_obj(
-        range: VMRange,
-        perms: VMPerms,
-        writeback_file: Option<(FileRef, usize)>,
-        pid: pid_t,
-    ) -> Box<VMAObj> {
-        Box::new(VMAObj {
-            link: Link::new(),
-            vma: VMArea {
-                range,
-                perms,
-                writeback_file,
-                pid,
-            },
-        })
-    }
-}
+// impl VMArea {
+//     pub fn new_obj(
+//         range: VMRange,
+//         perms: VMPerms,
+
+//         writeback_file: Option<(FileRef, usize)>,
+//         pid: pid_t,
+//     ) -> Box<VMAObj> {
+//         Box::new(VMAObj {
+//             link: Link::new(),
+//             vma: VMArea {
+//                 range,
+//                 perms,
+//                 writeback_file,
+//                 pid,
+//             },
+//         })
+//     }
+// }

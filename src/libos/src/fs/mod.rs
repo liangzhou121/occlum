@@ -50,7 +50,7 @@ mod fs_ops;
 mod fs_view;
 mod host_fd;
 mod hostfs;
-mod inode_file;
+pub mod inode_file;
 mod locks;
 mod pipe;
 mod procfs;

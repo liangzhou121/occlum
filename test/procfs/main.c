@@ -89,6 +89,15 @@ static int test_readlink_from_proc_self_cwd() {
     return 0;
 }
 
+static int test_read_from_proc_self_maps() {
+    const char *proc_maps = "/proc/self/maps";
+
+    if (test_read_from_procfs(proc_maps) < 0) {
+        THROW_ERROR("failed to read the cpuinfo");
+    }
+    return 0;
+}
+
 static int test_readlink_from_proc_self_root() {
     char root_buf[PATH_MAX] = { 0 };
     const char *proc_root = "/proc/self/root";
@@ -282,6 +291,7 @@ static test_case_t test_cases[] = {
     TEST_CASE(test_readdir_root),
     TEST_CASE(test_readdir_self),
     TEST_CASE(test_readdir_self_fd),
+    TEST_CASE(test_read_from_proc_self_maps),
 };
 
 int main(int argc, const char *argv[]) {

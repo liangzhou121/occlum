@@ -97,6 +97,7 @@ impl Chunk {
         let vm_area = VMArea::new(
             vm_range.clone(),
             *options.perms(),
+            options.initializer().init_file(),
             writeback_file,
             DUMMY_CHUNK_PROCESS_ID,
         );
@@ -175,10 +176,10 @@ impl Chunk {
             unreachable!();
         };
         trace!("get lock, try mmap in chunk: {:?}", self);
-        if internal_manager.chunk_manager().free_size() < options.size() {
+        if internal_manager.chunk_manager_mut().free_size() < options.size() {
             return_errno!(ENOMEM, "no enough size without trying. try other chunks");
         }
-        internal_manager.chunk_manager().mmap(options)
+        internal_manager.chunk_manager_mut().mmap(options)
     }
 
     pub fn is_single_vma(&self) -> bool {
@@ -279,7 +280,11 @@ impl ChunkInternal {
         self.process_set.insert(pid);
     }
 
-    pub fn chunk_manager(&mut self) -> &mut ChunkManager {
+    pub fn chunk_manager(&self) -> &ChunkManager {
+        &self.chunk_manager
+    }
+
+    pub fn chunk_manager_mut(&mut self) -> &mut ChunkManager {
         &mut self.chunk_manager
     }
 

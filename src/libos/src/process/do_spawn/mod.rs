@@ -182,7 +182,7 @@ fn new_process_common(
         file_path.to_string()
     };
 
-    let exec_elf_hdr = ElfFile::new(&elf_inode, &mut elf_buf, elf_header)
+    let exec_elf_hdr = ElfFile::new(file_path, &elf_inode, &mut elf_buf, elf_header)
         .cause_err(|e| errno!(e.errno(), "invalid executable"))?;
     let ldso_path = exec_elf_hdr
         .elf_interpreter()
@@ -196,8 +196,13 @@ fn new_process_common(
     } else {
         ldso_elf_header.unwrap()
     };
-    let ldso_elf_hdr = ElfFile::new(&ldso_inode, &mut ldso_elf_hdr_buf, ldso_elf_header)
-        .cause_err(|e| errno!(e.errno(), "invalid ld.so"))?;
+    let ldso_elf_hdr = ElfFile::new(
+        ldso_path,
+        &ldso_inode,
+        &mut ldso_elf_hdr_buf,
+        ldso_elf_header,
+    )
+    .cause_err(|e| errno!(e.errno(), "invalid ld.so"))?;
 
     let new_process_ref = {
         let process_ref = current_ref.process().clone();

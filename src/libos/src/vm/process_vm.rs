@@ -119,17 +119,11 @@ impl<'a, 'b> ProcessVMBuilder<'a, 'b> {
                     .size(elf_layout.size())
                     .align(elf_layout.align())
                     .perms(VMPerms::ALL) // set it to read | write | exec for simplicity
-                    .initializer(VMInitializer::DoNothing())
-                    .build()
-                    .map_err(|e| {
-                        &self.handle_error_when_init(&chunks);
-                        e
-                    })?;
-                let (elf_range, chunk_ref) =
-                    USER_SPACE_VM_MANAGER.alloc(&vm_option).map_err(|e| {
-                        &self.handle_error_when_init(&chunks);
-                        e
-                    })?;
+                    .initializer(VMInitializer::ElfSpecific {
+                        file_path: elf_file.file_path().to_owned(),
+                    })
+                    .build()?;
+                let (elf_range, chunk_ref) = USER_SPACE_VM_MANAGER.alloc(&vm_option)?;
                 debug_assert!(elf_range.start() % elf_layout.align() == 0);
                 chunks.insert(chunk_ref);
                 Self::init_elf_memory(&elf_range, elf_file).map_err(|e| {
@@ -321,6 +315,14 @@ impl Drop for ProcessVM {
 impl ProcessVM {
     pub fn mem_chunks(&self) -> &MemChunks {
         &self.mem_chunks
+    }
+
+    pub fn stack_range(&self) -> &VMRange {
+        &self.stack_range
+    }
+
+    pub fn heap_range(&self) -> &VMRange {
+        &self.heap_range
     }
 
     pub fn add_mem_chunk(&self, chunk: ChunkRef) {

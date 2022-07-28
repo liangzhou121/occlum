@@ -16,6 +16,7 @@ pub struct ElfFile<'a> {
     elf_buf: &'a [u8],
     elf_inner: Elf<'a>,
     file_inode: &'a Arc<dyn INode>,
+    file_path: &'a str,
 }
 
 impl<'a> Debug for ElfFile<'a> {
@@ -30,6 +31,7 @@ impl<'a> Debug for ElfFile<'a> {
 
 impl<'a> ElfFile<'a> {
     pub fn new(
+        file_path: &'a str,
         file_inode: &'a Arc<dyn INode>,
         mut elf_buf: &'a mut [u8],
         header: ElfHeader,
@@ -88,6 +90,7 @@ impl<'a> ElfFile<'a> {
             elf_buf,
             elf_inner,
             file_inode,
+            file_path,
         })
     }
 
@@ -109,6 +112,10 @@ impl<'a> ElfFile<'a> {
 
     pub fn file_inode(&self) -> &Arc<dyn INode> {
         self.file_inode
+    }
+
+    pub fn file_path(&self) -> &str {
+        self.file_path
     }
 
     pub fn parse_elf_hdr(inode: &Arc<dyn INode>, elf_buf: &mut Vec<u8>) -> Result<ElfHeader> {

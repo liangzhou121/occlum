@@ -1,9 +1,10 @@
 use super::*;
 
-// use super::vm_area::VMArea;
-// use super::free_space_manager::VMFreeSpaceManager;
 use super::vm_area::*;
 use super::vm_perms::VMPerms;
+use crate::fs::inode_file::AsINodeFile;
+use crate::fs::FileMode;
+use rcore_fs::vfs::INode;
 use std::collections::BTreeSet;
 
 use intrusive_collections::rbtree::{Link, RBTree};
@@ -22,6 +23,10 @@ pub enum VMInitializer {
         file: FileRef,
         offset: usize,
     },
+    // For ELF files, there is specical handling to not copy all the contents of the file. This is only used for tracking.
+    ElfSpecific {
+        file_path: String,
+    },
     // For file-backed mremap which may move from old range to new range and read extra bytes from file
     CopyOldAndReadNew {
         old_range: VMRange,
@@ -39,7 +44,7 @@ impl Default for VMInitializer {
 impl VMInitializer {
     pub fn init_slice(&self, buf: &mut [u8]) -> Result<()> {
         match self {
-            VMInitializer::DoNothing() => {
+            VMInitializer::DoNothing() | VMInitializer::ElfSpecific { .. } => {
                 // Do nothing
             }
             VMInitializer::FillZeros() => {
@@ -85,7 +90,33 @@ impl VMInitializer {
         }
         Ok(())
     }
+
+    pub fn init_file(&self) -> Option<(FileRef, usize)> {
+        match self {
+            VMInitializer::ElfSpecific { file_path } => {
+                let current = current!();
+                let fs = current.fs().read().unwrap();
+                let file_ref = fs
+                    .open_file(file_path, 0, FileMode::S_IRUSR)
+                    .expect("open elf file failure");
+                Some((file_ref, 0))
+            }
+            VMInitializer::LoadFromFile { file, offset } => Some((file.clone(), *offset)),
+            _ => None,
+        }
+    }
 }
+
+// impl Debug for VMInitializer {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             VMInitializer::ElfSpecific { .. } => {
+//                 write!(f, "Elf File")
+//             }
+//             _ => write!(f, "{:?}", self),
+//         }
+//     }
+// }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum VMMapAddr {
