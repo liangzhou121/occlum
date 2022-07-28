@@ -42,14 +42,14 @@ pub fn init_devfs() -> Result<Arc<MountFS>> {
     let dev_fd = Arc::new(DevFd) as _;
     devfs.add("fd", dev_fd);
     let mountable_devfs = MountFS::new(devfs);
-    // Mount the ramfs at '/shm'
-    let ramfs = RamFS::new();
-    mount_fs_at(
-        ramfs,
-        &mountable_devfs.root_inode(),
-        &Path::new("/shm"),
-        true,
-    )?;
+    // // Mount the ramfs at '/shm'
+    // let ramfs = RamFS::new();
+    // mount_fs_at(
+    //     ramfs,
+    //     &mountable_devfs.root_inode(),
+    //     &Path::new("/shm"),
+    //     true,
+    // )?;
     // TODO: Add stdio(stdin, stdout, stderr) into DevFS
     Ok(mountable_devfs)
 }

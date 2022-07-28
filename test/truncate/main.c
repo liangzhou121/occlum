@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "test_fs.h"
+#include <sys/mman.h>
 
 // ============================================================================
 // Helper function
@@ -219,6 +220,29 @@ static int test_truncate_then_write() {
     return test_file_framework(__test_truncate_then_write);
 }
 
+static int test_shm_open() {
+    char shmpath[] = "test_shm";
+    int fd = shm_open(shmpath, O_CREAT | O_EXCL | O_RDWR,
+                      S_IRUSR | S_IWUSR);
+    if (fd == -1) {
+        THROW_ERROR("failed to shm_open");
+    }
+
+    if (ftruncate(fd, sizeof(int)) == -1) {
+        THROW_ERROR("failed to ftruncate");
+    }
+
+    /* Map the object into the caller's address space. */
+
+    int *shared_int = mmap(NULL, sizeof(int),
+                           PROT_READ | PROT_WRITE,
+                           MAP_SHARED, fd, 0);
+    munmap(shared_int, sizeof(int));
+    shm_unlink(shmpath);
+
+    return 0;
+}
+
 // ============================================================================
 // Test suite main
 // ============================================================================
@@ -228,6 +252,7 @@ static test_case_t test_cases[] = {
     TEST_CASE(test_open_truncate_existing_file),
     TEST_CASE(test_truncate_then_write),
     TEST_CASE(test_truncate_then_read),
+    TEST_CASE(test_shm_open),
 };
 
 int main(int argc, const char *argv[]) {

@@ -56,6 +56,7 @@ mod pipe;
 mod procfs;
 mod rootfs;
 mod sefs;
+pub mod sharedmemory_file;
 mod stdio;
 mod syscalls;
 mod timer_file;

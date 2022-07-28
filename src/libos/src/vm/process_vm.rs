@@ -9,6 +9,7 @@ use super::vm_area::VMArea;
 use super::vm_perms::VMPerms;
 use super::vm_util::{VMInitializer, VMMapAddr, VMMapOptions, VMMapOptionsBuilder, VMRemapOptions};
 use crate::fs::device_file::AsDeviceFile;
+use crate::fs::sharedmemory_file::AsSharedMemoryFile;
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -480,6 +481,16 @@ impl ProcessVM {
                 let mapped_addr = device_file.mmap(addr, size, perms, flags, fd, offset)?;
 
                 let untrust_range = VMRange::new(mapped_addr, mapped_addr + size)?;
+                let mut untrust_ranges = self.untrust_ranges.write().unwrap();
+                untrust_ranges.push(untrust_range);
+
+                return Ok(mapped_addr);
+            } else if let Ok(sharedmemory_file) = file_ref.as_sharedmemory_file() {
+                let mapped_addr = sharedmemory_file.mmap(addr, size, perms, flags, fd, offset)?;
+
+                // let untrust_range = VMRange::new(mapped_addr, mapped_addr + size)?;
+                error!("{:#x?}", mapped_addr);
+                let untrust_range = VMRange::new(mapped_addr, mapped_addr + 4096)?;
                 let mut untrust_ranges = self.untrust_ranges.write().unwrap();
                 untrust_ranges.push(untrust_range);
 

@@ -2,7 +2,8 @@
 use super::*;
 
 use crate::fs::device_file::DeviceFile;
-use rcore_fs::vfs::FileType::RealDevice;
+use crate::fs::sharedmemory_file::SharedMemoryFile;
+use rcore_fs::vfs::FileType::{RealDevice, SharedMemory};
 
 #[derive(Debug, Clone)]
 pub struct FsView {
@@ -113,6 +114,12 @@ impl FsView {
         if let Ok(metadata) = inode.metadata() {
             if metadata.type_ == RealDevice {
                 return Ok(Arc::new(DeviceFile::open(inode, &abs_path, flags)?));
+            }
+        }
+
+        if let Ok(metadata) = inode.metadata() {
+            if metadata.type_ == SharedMemory {
+                return Ok(Arc::new(SharedMemoryFile::open(inode, &abs_path, flags)?));
             }
         }
 
