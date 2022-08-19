@@ -17,7 +17,12 @@ impl File for DeviceFile {
 
     fn ioctl(&self, cmd: &mut IoctlCmd) -> Result<i32> {
         let host_fd = self.host_fd.to_raw() as c_int;
-        let cmd_num = cmd.cmd_num() as c_int;
+        let cmd_num = cmd.cmd_num() as u32;
+        let arg = cmd.arg_ptr() as *const u8;
+
+        Ok(super::i915::ioctl(host_fd, &cmd_num, arg).unwrap())
+
+        /*
         let cmd_arg_ptr = cmd.arg_ptr() as *mut c_void;
         let ret = try_libc!({
             let mut retval: i32 = 0;
@@ -32,13 +37,13 @@ impl File for DeviceFile {
             let status = occlum_ocall_device_ioctl(
                 &mut retval as *mut i32,
                 host_fd,
-                cmd_num,
+                cmd_num as c_int,
                 cmd_arg_ptr as u64,
             );
             assert!(status == sgx_status_t::SGX_SUCCESS);
             retval
         });
-        Ok(ret)
+        Ok(ret)*/
     }
 
     fn as_any(&self) -> &dyn Any {
