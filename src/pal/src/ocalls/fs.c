@@ -94,6 +94,7 @@ int occlum_ocall_device_ioctl(
 ) {
     int ret = ioctl(fd, cmd, (void *)arg);
 
+#if 0
     /* FIXME: very special case of DRM_IOCTL_I915_GETPARAM(I915_PARAM_HAS_BSD2): Intel Media
          *        Driver uses Sys-V IPC (semget and shmget family of syscalls) for multi-process
          *        user-mode synchronization (to load-balance execution of video encode/decode on
@@ -172,5 +173,7 @@ int occlum_ocall_device_ioctl(
             }
         }
     }
+#endif
     return ret;
 }
+
