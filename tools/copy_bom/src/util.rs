@@ -248,27 +248,31 @@ fn command_output_of_executing_dynamic_loader(
     } else {
         file_path_buf.to_string_lossy().to_string()
     };
+    let ld_library_path = match (
+        OCCLUM_LOADERS.ld_library_path_envs.get(dynamic_loader),
+        std::env::var("LD_LIBRARY_PATH")
+    ) {
+        (Some(ld_library_path), Ok(env_ld_library_path)) => {
+            if env_ld_library_path.len() > 0 {
+                format!("{}:{}", ld_library_path, env_ld_library_path)
+            } else {
+                ld_library_path.to_owned()
+            }
+        }
+        (Some(ld_library_path), Err(_)) => ld_library_path.to_owned(),
+        (None, Ok(env_ld_library_path)) => env_ld_library_path,
+        (None, Err(_)) => String::from("")
+    };
+    debug!(
+        "LD_LIBRARY_PATH='{}' {} --list {}",
+        ld_library_path, dynamic_loader, file_path
+    );
     // return the output of the command to analyze dependencies
-    match OCCLUM_LOADERS.ld_library_path_envs.get(dynamic_loader) {
-        None => {
-            debug!("{} --list {}", dynamic_loader, file_path);
-            Command::new(dynamic_loader)
-                .arg("--list")
-                .arg(file_path)
-                .output()
-        }
-        Some(ld_library_path) => {
-            debug!(
-                "LD_LIBRARY_PATH='{}' {} --list {}",
-                ld_library_path, dynamic_loader, file_path
-            );
-            Command::new(dynamic_loader)
-                .arg("--list")
-                .arg(file_path)
-                .env("LD_LIBRARY_PATH", ld_library_path)
-                .output()
-        }
-    }
+    Command::new(dynamic_loader)
+        .arg("--list")
+        .arg(file_path)
+        .env("LD_LIBRARY_PATH", ld_library_path)
+        .output()
 }
 
 /// This function will try to find a dynamic loader for a elf file automatically.
