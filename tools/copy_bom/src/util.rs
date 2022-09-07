@@ -258,12 +258,11 @@ fn command_output_of_executing_dynamic_loader(
                 .output()
         }
         Some(ld_library_path) => {
-            let ld_library_path = std::env::var("LD_LIBRARY_PATH").unwrap() + ld_library_path;
+            let ld_library_path = ld_library_path.to_owned() + &std::env::var("LD_LIBRARY_PATH").unwrap();
             debug!(
                 "LD_LIBRARY_PATH='{}' {} --list {}",
                 ld_library_path, dynamic_loader, file_path
             );
-            //info!("System: LD_LIBRARY_PATH: {:?}", std::env::var("LD_LIBRARY_PATH"));
             Command::new(dynamic_loader)
                 .arg("--list")
                 .arg(file_path)
