@@ -20,7 +20,7 @@ impl File for DeviceFile {
         let cmd_num = cmd.cmd_num() as u32;
         let arg = cmd.arg_ptr() as *const u8;
 
-        Ok(super::i915::ioctl(host_fd, &cmd_num, arg).unwrap())
+        Ok(i915r::pxp_ioctl(host_fd, cmd_num, arg))
 
         /*
         let cmd_arg_ptr = cmd.arg_ptr() as *mut c_void;

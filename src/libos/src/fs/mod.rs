@@ -38,7 +38,7 @@ pub use self::stdio::{HostStdioFds, StdinFile, StdoutFile};
 pub use self::syscalls::*;
 pub use self::timer_file::{AsTimer, TimerCreationFlags, TimerFile};
 
-mod buddy_alloc;
+//mod buddy_alloc;
 pub mod channel;
 mod dev_fs;
 pub mod device_file;
@@ -51,7 +51,7 @@ mod fs_ops;
 mod fs_view;
 mod host_fd;
 mod hostfs;
-mod i915;
+//mod i915;
 pub mod inode_file;
 mod locks;
 mod pipe;

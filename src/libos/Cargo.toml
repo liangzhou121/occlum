@@ -31,6 +31,7 @@ itertools = { version = "0.10.0", default-features = false, features = ["use_all
 ctor = "0.1"
 regex = { git = "https://github.com/mesalock-linux/regex-sgx", default-features = false, features = ["std", "unicode", "mesalock_sgx"] }
 spin = "0.5.2"
+i915r = { path = "../../deps/pxp-rs/rlib", features = ["occlum"] }
 
 [patch.'https://github.com/apache/teaclave-sgx-sdk.git']
 sgx_tstd = { path = "../../deps/rust-sgx-sdk/sgx_tstd" }
