@@ -594,7 +594,37 @@ impl ProcessVM {
         };
         let protect_range = VMRange::new_with_size(addr, size)?;
 
-        return USER_SPACE_VM_MANAGER.mprotect(addr, size, perms);
+        match USER_SPACE_VM_MANAGER.mprotect(addr, size, perms) {
+            Ok(()) => Ok(()),
+            Err(e) => {
+                let mut untrust_ranges = self.untrust_ranges.write().unwrap();
+
+                // fixme: if the range is smaller or lager than the range in the ranges
+                if let Some(index) = untrust_ranges
+                    .iter()
+                    .position(|value| value.overlap_with(&protect_range))
+                {
+                    let mut ret: i32 = 0;
+                    let status = unsafe {
+                        occlum_ocall_mprotect(
+                            &mut ret,
+                            addr as *const c_void,
+                            size,
+                            perms.bits() as i32,
+                        )
+                    };
+                    assert!(status == sgx_status_t::SGX_SUCCESS);
+
+                    if ret != 0 {
+                        return_errno!(EINVAL, "mprotect failed");
+                    }
+
+                    return Ok(());
+                }
+
+                Err(e)
+            }
+        }
     }
 
     pub fn msync(&self, addr: usize, size: usize) -> Result<()> {
@@ -700,4 +730,10 @@ impl MSyncFlags {
 
 extern "C" {
     pub fn occlum_ocall_device_munmap(ret: *mut i32, addr: u64, length: size_t) -> sgx_status_t;
+    pub fn occlum_ocall_mprotect(
+        retval: *mut i32,
+        addr: *const c_void,
+        len: usize,
+        prot: i32,
+    ) -> sgx_status_t;
 }
