@@ -71,6 +71,7 @@ init-submodule:
 	cd deps/serde-json-sgx && git apply ../serde-json-sgx.patch >/dev/null 2>&1 || git apply ../serde-json-sgx.patch -R --check
 	cd deps/ringbuf && git apply ../ringbuf.patch >/dev/null 2>&1 || git apply ../ringbuf.patch -R --check
 	cd deps/resolv-conf && git apply ../resolv-conf.patch >/dev/null 2>&1 || git apply ../resolv-conf.patch -R --check
+	cd deps/sefs && git apply ../../demos/pxp/sefs.patch >/dev/null 2>&1 || git apply ../../demos/pxp/sefs.patch -R --check
 
 src:
 	@$(MAKE) --no-print-directory -C src
