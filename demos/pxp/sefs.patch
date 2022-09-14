@@ -1,0 +1,26 @@
+diff --git a/rcore-fs-cli/src/fuse.rs b/rcore-fs-cli/src/fuse.rs
+index 2212b0c..edc907f 100644
+--- a/rcore-fs-cli/src/fuse.rs
++++ b/rcore-fs-cli/src/fuse.rs
+@@ -60,6 +60,8 @@ impl VfsFuse {
+             vfs::FileType::BlockDevice => FileType::BlockDevice,
+             vfs::FileType::NamedPipe => FileType::NamedPipe,
+             vfs::FileType::Socket => FileType::Socket,
++            vfs::FileType::RealDevice => FileType::BlockDevice,
++            vfs::FileType::SharedMemory => FileType::RegularFile,
+         }
+     }
+     fn trans_error(err: vfs::FsError) -> i32 {
+diff --git a/rcore-fs/src/vfs.rs b/rcore-fs/src/vfs.rs
+index 674b9bb..77a34ee 100644
+--- a/rcore-fs/src/vfs.rs
++++ b/rcore-fs/src/vfs.rs
+@@ -307,6 +307,8 @@ pub enum FileType {
+     BlockDevice,
+     NamedPipe,
+     Socket,
++    RealDevice,
++    SharedMemory,
+ }
+ 
+ pub const FS_MAC_SIZE: usize = 16;
