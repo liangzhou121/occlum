@@ -102,6 +102,7 @@ pub fn do_ioctl(fd: FileDesc, cmd: &mut IoctlCmd) -> Result<i32> {
     let file_ref = current.file(fd)?;
     let mut file_table = current.files().lock().unwrap();
     let mut entry = file_table.get_entry_mut(fd)?;
+
     match cmd {
         IoctlCmd::FIONCLEX(_) => {
             entry.set_close_on_spawn(false);
@@ -111,7 +112,11 @@ pub fn do_ioctl(fd: FileDesc, cmd: &mut IoctlCmd) -> Result<i32> {
             entry.set_close_on_spawn(true);
             return Ok(0);
         }
-        _ => return file_ref.ioctl(cmd),
+        _ => {
+            drop(entry);
+            drop(file_table);
+            return file_ref.ioctl(cmd);
+        }
     }
 }
 
